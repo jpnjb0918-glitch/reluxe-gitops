@@ -1,0 +1,24 @@
+# ---------------------------------------------------------------------------
+# Reverdi (RELUXE) 애플리케이션 차트
+#
+# 이 차트 하나가 웹·크롤러·집계·백업·마이그레이션을 전부 담는다.
+# 환경 차이(Vagrant/AWS)는 values-vagrant.yaml · values-aws.yaml 로만 가른다.
+# ---------------------------------------------------------------------------
+apiVersion: v2
+name: reluxe
+description: 중고 명품 통합 탐색 플랫폼 - FastAPI 단일 컨테이너로 프론트와 API를 함께 서빙
+
+# application = 실행 가능한 앱. library 는 다른 차트가 가져다 쓰는 함수 모음.
+type: application
+
+# version      차트 자체의 버전. 템플릿을 고칠 때마다 올린다.
+# appVersion   담고 있는 애플리케이션의 버전. 이미지 태그와는 별개다.
+#              (이미지 태그는 values 의 image.tag 가 정한다)
+version: 0.1.0
+appVersion: "0.1.0"
+
+keywords:
+  - fastapi
+  - crawler
+maintainers:
+  - name: d'occasion 1팀
