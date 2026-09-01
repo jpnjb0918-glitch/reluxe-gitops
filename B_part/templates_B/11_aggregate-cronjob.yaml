@@ -1,0 +1,43 @@
+{{/*
+===========================================================================
+집계 CronJob — 주기적 통계 및 데이터 집계 배치 워크로드
+===========================================================================
+*/}}
+{{- if .Values.aggregate.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "reluxe.fullname" . }}-aggregate
+  labels:
+    {{- include "reluxe.labels" . | nindent 4 }}
+    app.kubernetes.io/component: aggregate
+spec:
+  schedule: {{ .Values.aggregate.schedule | quote }}
+  concurrencyPolicy: {{ .Values.aggregate.concurrencyPolicy | default "Forbid" }}
+  successfulJobsHistoryLimit: {{ .Values.aggregate.successfulJobsHistoryLimit | default 3 }}
+  failedJobsHistoryLimit: {{ .Values.aggregate.failedJobsHistoryLimit | default 1 }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            {{- include "reluxe.labels" . | nindent 12 }}
+            app.kubernetes.io/component: aggregate
+        spec:
+          restartPolicy: OnFailure
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          containers:
+            - name: aggregate
+              image: {{ include "reluxe.image" . }}
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command: {{ toYaml .Values.aggregate.command | nindent 16 }}
+              envFrom:
+                {{- include "reluxe.envFrom" . | nindent 16 }}
+              resources:
+                {{- toYaml .Values.aggregate.resources | nindent 16 }}
+              securityContext:
+                {{- toYaml .Values.securityContext | nindent 16 }}
+{{- end }}
