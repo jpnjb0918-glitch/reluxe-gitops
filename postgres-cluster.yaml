@@ -1,0 +1,72 @@
+# ---------------------------------------------------------------------------
+# infra/postgres-cluster.yaml — CloudNativePG Cluster (node1~3, Vagrant 전용)
+#
+# AWS로 가면 이 파일은 버려지고 RDS Multi-AZ로 대체된다.
+# 다만 CNPG가 만드는 접속 주소(-rw / -ro)가 RDS와 모양이 같아서,
+# 여기서 검증한 앱의 읽기/쓰기 분리 로직이 AWS에서도 그대로 통한다.
+#
+# 🔴 클러스터 이름을 reluxe-db로 둔 이유
+#    CNPG는 <클러스터이름>-rw / <클러스터이름>-ro 서비스를 자동 생성한다.
+#    A/B가 이미 짠 secret.yaml의 DATABASE_URL이
+#      reluxe-db-rw.reluxe.svc / reluxe-db-ro.reluxe.svc
+#    를 그대로 가리키고 있으므로, 이름이 다르면 앱이 DB를 못 찾는다.
+#
+# 적용 전제 (④ 문서 0-D 순서표)
+#   1) CloudNativePG 오퍼레이터가 먼저 helm install 되어 있어야 함
+#      (없으면 "Cluster 리소스 없음" 에러)
+#   3) namespace reluxe가 먼저 있어야 함
+#      kubectl create ns reluxe
+# ---------------------------------------------------------------------------
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: reluxe-db
+  namespace: reluxe
+spec:
+  instances: 3   # primary 1 + replica 2 → node1~3에 하나씩
+
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.4
+
+  primaryUpdateStrategy: unsupervised   # 테스트 단계. 운영 전환 시 supervised 재검토
+
+  storage:
+    size: 10Gi
+    storageClass: local-path
+
+  bootstrap:
+    initdb:
+      database: reluxe
+      owner: reluxe
+      # 🔴 비밀번호를 여기 적지 않는다.
+      #    이 이름의 시크릿이 없으면 CNPG가 자동 생성한다 (username/password 키).
+      #    값은 아래 명령으로 꺼내서, A담당 README의
+      #    "kubectl create secret ... DATABASE_URL=postgresql+asyncpg://reluxe:PW@..." 의
+      #    PW 자리에 넣어준다.
+      #      kubectl get secret reluxe-db-app -n reluxe -o jsonpath='{.data.password}' | base64 -d
+      secret:
+        name: reluxe-db-app
+
+  # DB 파드도 웹 파드와 같은 노드군(node1~3)에만 뜨게 한다. (④ 문서 0-B)
+  # 사전 작업: kubectl label node node1 node2 node3 workload=web
+  affinity:
+    nodeSelector:
+      workload: web
+    # primary/replica를 서로 다른 노드로 분산 (기본 preferred)
+    podAntiAffinityType: preferred
+    topologyKey: kubernetes.io/hostname
+    # ⚠️ AWS에서는 topologyKey를 topology.kubernetes.io/zone(AZ)으로 바꾼다.
+    #    Vagrant는 노드에 AZ 라벨이 없으므로 호스트 단위로 대체했다.
+    #    실제 AZ 분산을 여기서도 검증하고 싶다면 node1~3에
+    #    topology.kubernetes.io/zone=az-a/b/c 라벨을 수동으로 걸고
+    #    이 값을 맞춰 쓰면 된다 — 이 부분은 팀 회의에서 정하는 게 좋겠음.
+
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+  monitoring:
+    enablePodMonitor: false   # kube-prometheus-stack 설치 후 true로 전환
