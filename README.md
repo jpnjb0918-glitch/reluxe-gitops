@@ -1,2 +1,0 @@
-# reluxe-gitops
-Hellm chart

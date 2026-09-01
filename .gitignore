@@ -1,0 +1,12 @@
+﻿# helm 바이너리·산출물
+helm.exe
+LICENSE
+*.tgz
+out.yaml
+ing.yaml
+
+# 비밀값
+secret-values.yaml
+values-local.yaml
+*.key
+*.pem
