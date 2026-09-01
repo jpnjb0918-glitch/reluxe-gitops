@@ -1,0 +1,166 @@
+{{/*
+===========================================================================
+웹 Deployment — FastAPI 단일 컨테이너
+
+이 컨테이너 하나가 프론트와 API를 함께 서빙한다.
+  /          web/ 정적 파일 (StaticFiles 마운트)
+  /board     Jinja2 게시판 화면
+  /api/*     JSON API
+같은 출처라 CORS가 필요 없다. nginx도 없다.
+===========================================================================
+*/}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "reluxe.fullname" . }}-web
+  labels:
+    {{- include "reluxe.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  {{/*
+    HPA를 켜면 replicas를 여기서 지정하면 안 된다.
+    Helm이 3으로 되돌리고 HPA가 다시 늘리는 싸움이 난다.
+  */}}
+  {{- if not .Values.hpa.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+
+  {{/*
+    🔴 selector는 불변 필드다. 배포 후에 바꾸면 업그레이드가 실패한다.
+       그래서 version처럼 자주 바뀌는 값이 들어간 reluxe.labels를 쓰면 안 된다.
+       selectorLabels(name + instance)만 쓴다.
+  */}}
+  selector:
+    matchLabels:
+      {{- include "reluxe.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: web
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{ .Values.strategy.maxSurge }}
+      {{/*
+        🔴 maxUnavailable: 0 이어야 새 파드가 Ready된 뒤에 옛 파드를 지운다.
+           1이면 배포 중 용량이 3→2로 줄어 요청이 끊길 수 있다.
+      */}}
+      maxUnavailable: {{ .Values.strategy.maxUnavailable }}
+
+  template:
+    metadata:
+      labels:
+        {{- include "reluxe.labels" . | nindent 8 }}
+        app.kubernetes.io/component: web
+      annotations:
+        {{/*
+          ConfigMap이나 Secret이 바뀌어도 파드는 자동으로 재시작되지 않는다.
+          내용을 해시해서 어노테이션에 넣으면, 값이 바뀔 때 파드 템플릿이 바뀌어
+          롤링 업데이트가 걸린다. 설정만 고치고 왜 반영이 안 되냐는 상황을 막는다.
+        */}}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{/* 종료 시 진행 중이던 요청을 마저 처리할 시간 */}}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+
+      {{/* 웹 노드에만 뜬다. 배치 노드로 새어 들어가지 않게. */}}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{/*
+        🔴 AZ 분산. 이걸 안 걸면 replicas 3을 줘도 파드가 한 노드에 몰릴 수 있다.
+           그 노드가 죽으면 서비스가 전부 사라진다.
+           "3개 AZ에 분산했습니다"라고 말하려면 이 항목이 있어야 한다.
+      */}}
+      {{- if .Values.topologySpread.enabled }}
+      topologySpreadConstraints:
+        - maxSkew: {{ .Values.topologySpread.maxSkew }}
+          topologyKey: {{ .Values.topologySpread.topologyKey }}
+          whenUnsatisfiable: {{ .Values.topologySpread.whenUnsatisfiable }}
+          labelSelector:
+            matchLabels:
+              {{- include "reluxe.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: web
+      {{- end }}
+
+      containers:
+        - name: web
+          image: {{ include "reluxe.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+
+          ports:
+            {{/* dockerfile.backend의 EXPOSE 8000 */}}
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+
+          {{/*
+            ConfigMap과 Secret의 키가 그대로 환경변수 이름이 된다.
+            app/config.py가 os.getenv("LOG_LEVEL") 식으로 읽으므로 맞아떨어진다.
+          */}}
+          envFrom:
+            {{- include "reluxe.envFrom" . | nindent 12 }}
+
+          {{/*
+            🔴 liveness와 readiness의 경로가 다르다. 바꿔 쓰면 장애가 커진다.
+
+            /health  프로세스만 확인. DB를 보지 않는다.
+                     코드 주석: "의존 서비스는 일부러 확인하지 않는다"
+            /ready   DB와 마이그레이션까지 확인. 실패해도 파드를 죽이지 않고
+                     Service 엔드포인트에서만 빼므로 안전하다.
+
+            liveness에 /ready를 쓰면 DB가 잠깐 죽었을 때 파드 3개가
+            전부 재시작 루프에 빠진다. 60초 장애가 몇 분짜리 전면 정지가 된다.
+          */}}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
+
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.readiness.failureThreshold }}
+
+          {{/*
+            🔴 requests가 없으면 HPA가 동작하지 않는다.
+               HPA는 "요청량 대비 사용량"으로 판단하는데 기준이 사라지기 때문.
+          */}}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+
+          {{/*
+            이미지가 이미 uid 10001 비루트로 만들어져 있다(dockerfile.backend).
+            여기서는 선언만 하면 된다.
+          */}}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+
+          lifecycle:
+            preStop:
+              exec:
+                {{/*
+                  파드가 종료 신호를 받으면 두 가지가 동시에 일어난다.
+                    ① Service 엔드포인트에서 제거
+                    ② 컨테이너에 SIGTERM 전달
+                  ②가 먼저 끝나면 아직 ①이 전파되지 않은 노드가 죽은 파드로
+                  요청을 보낸다. 몇 초 기다려 그 시차를 메운다.
+                */}}
+                command: ["sh", "-c", "sleep {{ .Values.preStopSleepSeconds }}"]
