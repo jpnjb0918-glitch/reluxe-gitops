@@ -1,0 +1,59 @@
+{{/*
+===========================================================================
+클릭 집계 CronJob — 큐에서 클릭 이벤트를 꺼내 DB 에 반영
+
+⚠️ 기본값은 enabled: false 다.
+   app/aggregate 모듈이 아직 없다(백엔드 수정요청 6번).
+   진입점이 생긴 뒤 values 에서 true 로 바꾼다.
+
+크롤러와 같은 배치 노드에 뜬다. 웹 노드의 자원을 쓰면 안 되기 때문.
+===========================================================================
+*/}}
+{{- if .Values.aggregate.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "reluxe.fullname" . }}-aggregate
+  labels:
+    {{- include "reluxe.labels" . | nindent 4 }}
+    app.kubernetes.io/component: aggregate
+spec:
+  schedule: {{ .Values.aggregate.schedule | quote }}
+  concurrencyPolicy: {{ .Values.aggregate.concurrencyPolicy }}
+  successfulJobsHistoryLimit: {{ .Values.aggregate.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.aggregate.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            {{- include "reluxe.labels" . | nindent 12 }}
+            app.kubernetes.io/component: aggregate
+        spec:
+          restartPolicy: OnFailure
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.aggregate.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.aggregate.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          containers:
+            - name: aggregate
+              {{/* 백엔드 이미지를 쓴다. Playwright 가 필요 없는 작업이다. */}}
+              image: {{ include "reluxe.image" . }}
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command:
+                {{- toYaml .Values.aggregate.command | nindent 16 }}
+              envFrom:
+                {{- include "reluxe.envFrom" . | nindent 16 }}
+              resources:
+                {{- toYaml .Values.aggregate.resources | nindent 16 }}
+              securityContext:
+                {{- toYaml .Values.securityContext | nindent 16 }}
+{{- end }}

@@ -1,0 +1,70 @@
+{{/*
+===========================================================================
+DB 논리 백업 CronJob — pg_dump
+
+⚠️ 기본값은 enabled: false 다. 백업을 어디에 보관할지가 정해져야 켠다.
+
+🔴 emptyDir 에만 쓰면 파드가 끝날 때 같이 사라진다.
+   설계상 오브젝트 스토리지(Vagrant=MinIO, AWS=S3)로 올려야 의미가 있다.
+   업로드 부분은 C 가 MinIO 를 띄운 뒤 확정한다.
+
+⚠️ pg_dump 는 서버보다 버전이 낮으면 거부된다.
+   RDS 가 PostgreSQL 17 이므로 이미지도 17 로 맞춘다.
+===========================================================================
+*/}}
+{{- if .Values.pgdump.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "reluxe.fullname" . }}-pgdump
+  labels:
+    {{- include "reluxe.labels" . | nindent 4 }}
+    app.kubernetes.io/component: pgdump
+spec:
+  schedule: {{ .Values.pgdump.schedule | quote }}
+  concurrencyPolicy: {{ .Values.pgdump.concurrencyPolicy }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            {{- include "reluxe.labels" . | nindent 12 }}
+            app.kubernetes.io/component: pgdump
+        spec:
+          restartPolicy: OnFailure
+          {{- with .Values.pgdump.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.pgdump.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumes:
+            {{/* 덤프를 만들 임시 공간. 업로드가 끝나면 파드와 함께 사라진다. */}}
+            - name: work
+              emptyDir: {}
+          containers:
+            - name: pgdump
+              image: {{ .Values.pgdump.image }}
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+                  FILE="{{ .Values.pgdump.workDir }}/reluxe-$(date +%Y%m%d%H%M%S).sql.gz"
+                  echo "덤프 시작: $FILE"
+                  pg_dump "$DATABASE_URL" | gzip > "$FILE"
+                  ls -lh "$FILE"
+                  # TODO(C): 오브젝트 스토리지 업로드
+                  #   Vagrant  mc cp "$FILE" minio/reluxe-backup/
+                  #   AWS      aws s3 cp "$FILE" s3://<버킷>/backup/
+                  echo "업로드 미구현. 이 파드가 끝나면 파일은 사라진다."
+              envFrom:
+                {{- include "reluxe.envFrom" . | nindent 16 }}
+              volumeMounts:
+                - name: work
+                  mountPath: {{ .Values.pgdump.workDir }}
+              resources:
+                {{- toYaml .Values.pgdump.resources | nindent 16 }}
+{{- end }}

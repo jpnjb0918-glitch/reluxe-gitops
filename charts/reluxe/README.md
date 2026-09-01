@@ -1,6 +1,20 @@
-# reluxe Helm 차트 — A 담당분 (1~8번)
+# reluxe Helm 차트 — 전체 (A 8개 + B 7개)
 
-`④_작성할_YAML목록.md`의 그룹 A 8개 파일입니다.
+`④_작성할_YAML목록.md`의 그룹 A + B 파일입니다.
+
+## ⚠️ B 파일 수정 내역 (검토 후 반영)
+
+| 항목 | 원래 | 고침 |
+|---|---|---|
+| `pdb.yaml` | **빈 파일(0바이트)** | 작성 |
+| `crawler.command` | `crawler.main` — **없는 모듈** | `python -m app.crawler --once` (README 248행) |
+| `aggregate.command` | `app.aggregate` — **미구현** | `enabled: false` 로 |
+| 키 이름 | `backup.*` | `pgdump.*` 로 통일 |
+| `pg_dump` 이미지 | `postgres:15-alpine` | **`17-alpine`** — RDS 가 PG17. 낮으면 거부됨 |
+| 크롤러 `/dev/shm` | **없음** | `emptyDir(medium: Memory)` 마운트 |
+| `pgdump` 저장 위치 | `/backup` 마운트 없음 | `emptyDir` + 업로드 TODO 표시 |
+| 이미지 이름 | `reluxe-web` | **`reluxe-backend`** — web 은 nginx 이미지 |
+| `values.yaml` 누락 키 | 5개 | 전부 추가 |
 
 ## 파일
 

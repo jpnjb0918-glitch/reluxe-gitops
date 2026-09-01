@@ -1,0 +1,48 @@
+{{/*
+===========================================================================
+HorizontalPodAutoscaler — 부하에 따라 웹 파드 수를 조절
+
+🔴 전제 두 가지
+   ① Metrics Server 가 설치돼 있어야 한다. 없으면 지표가 unknown 으로 남는다
+   ② deployment 에 resources.requests 가 있어야 한다.
+      HPA 는 "요청량 대비 사용량"으로 판단하므로 기준이 없으면 동작하지 않는다
+===========================================================================
+*/}}
+{{- if .Values.hpa.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "reluxe.fullname" . }}-web
+  labels:
+    {{- include "reluxe.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "reluxe.fullname" . }}-web
+  minReplicas: {{ .Values.hpa.minReplicas }}
+  maxReplicas: {{ .Values.hpa.maxReplicas }}
+  metrics:
+    {{- if .Values.hpa.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.hpa.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{/*
+      메모리 지표는 기본으로 끈다(values 에서 null).
+      파이썬 프로세스는 한 번 올라간 메모리가 잘 안 내려가서
+      축소가 막히고 파드가 max 에 붙은 채로 남는 경우가 있다.
+    */}}
+    {{- if .Values.hpa.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.hpa.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}

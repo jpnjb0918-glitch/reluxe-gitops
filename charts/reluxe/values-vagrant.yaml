@@ -1,0 +1,90 @@
+# ===========================================================================
+# Vagrant (로컬 k3s) 전용 값
+#
+#   helm upgrade --install reluxe charts/reluxe -n reluxe -f charts/reluxe/values-vagrant.yaml
+#
+# values.yaml 을 덮어쓴다. 여기 없는 항목은 values.yaml 값을 그대로 쓴다.
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# 이미지 — 사설 레지스트리 (C 가 node5 에 registry:2 로 띄운다)
+# ⚠️ 앱 이미지는 reluxe-backend 다. reluxe-web 은 nginx 이미지라 다르다.
+# ---------------------------------------------------------------------------
+image:
+  repository: 192.168.56.15:30500/reluxe-backend
+  tag: dev
+  pullPolicy: IfNotPresent
+
+crawlerImage:
+  repository: 192.168.56.15:30500/reluxe-crawler
+
+# ---------------------------------------------------------------------------
+# 외부 접근 — 로컬엔 ALB 가 없으므로 NodePort 로 연다
+#   http://192.168.56.11:30080
+# ---------------------------------------------------------------------------
+nodeport:
+  enabled: true
+  port: 30080
+
+ingress:
+  enabled: false
+
+# ---------------------------------------------------------------------------
+# 규모
+# 노드가 3대 이상이면 replicaCount 3 + topologySpread 로 분산을 검증한다.
+# VM 을 1대만 띄운다면 replicaCount 1, topologySpread false 로 낮춘다.
+# ---------------------------------------------------------------------------
+replicaCount: 3
+
+topologySpread:
+  enabled: true
+  maxSkew: 1
+  topologyKey: kubernetes.io/hostname   # 로컬엔 AZ 라벨이 없으므로 호스트명으로
+  whenUnsatisfiable: ScheduleAnyway     # 분산이 안 돼도 일단 띄운다
+
+pdb:
+  enabled: true
+  minAvailable: 2
+
+hpa:
+  enabled: false        # Metrics Server 설치 후 true 로
+
+# ---------------------------------------------------------------------------
+# 자원 — 로컬 VM 은 여유가 적으므로 낮춘다
+# ---------------------------------------------------------------------------
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# ---------------------------------------------------------------------------
+# 설정
+# ---------------------------------------------------------------------------
+config:
+  LOG_LEVEL: "DEBUG"
+  LOG_FORMAT: "text"        # 로컬에선 사람이 읽기 좋게
+  ENABLE_CRAWLER: "false"   # 크롤링은 CronJob 담당
+  ALLOWED_ORIGINS: ""
+
+# 🔴 Secret 은 미리 만들어 둔다 (README 참조). 차트는 참조만 한다.
+secret:
+  create: false
+  name: reluxe-secret
+
+# ---------------------------------------------------------------------------
+# 배치
+# ---------------------------------------------------------------------------
+crawler:
+  enabled: true
+  # 로컬에서는 자주 돌 필요가 없다. 동작 확인만 하고 수동 실행이 편하다.
+  #   kubectl create job --from=cronjob/reluxe-crawler manual-1 -n reluxe
+  schedule: "0 */6 * * *"
+
+aggregate:
+  enabled: false    # app/aggregate 모듈 미구현
+
+pgdump:
+  enabled: false    # MinIO 업로드 미구현

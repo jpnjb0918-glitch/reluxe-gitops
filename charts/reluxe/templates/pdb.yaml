@@ -1,0 +1,29 @@
+{{/*
+===========================================================================
+PodDisruptionBudget — 자발적 중단 시 최소 가동 수 보장
+
+노드 점검(kubectl drain)이나 노드 자동 교체 때
+파드가 한꺼번에 빠지는 것을 막는다.
+
+replicas 3 에 minAvailable 2 면 한 번에 하나씩만 빠진다.
+
+⚠️ 노드가 갑자기 죽는 것(비자발적 중단)은 막지 못한다.
+   그건 topologySpreadConstraints 로 분산해서 대비한다.
+===========================================================================
+*/}}
+{{- if .Values.pdb.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "reluxe.fullname" . }}-web
+  labels:
+    {{- include "reluxe.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  minAvailable: {{ .Values.pdb.minAvailable }}
+  {{/* Deployment 의 파드 라벨과 일치해야 한다 */}}
+  selector:
+    matchLabels:
+      {{- include "reluxe.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: web
+{{- end }}
