@@ -1,0 +1,41 @@
+{{/*
+===========================================================================
+웹 Service — 파드 3개를 하나의 이름으로 묶는다
+
+파드는 죽고 새로 뜨면서 IP가 계속 바뀐다. Service 이름은 그대로라
+다른 파드나 Ingress가 이 이름으로 찾아온다.
+
+  reluxe-web.reluxe.svc.cluster.local
+  └ 이름     └ 네임스페이스
+===========================================================================
+*/}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "reluxe.fullname" . }}-web
+  labels:
+    {{- include "reluxe.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  {{/*
+    ClusterIP  클러스터 안에서만 접근. AWS는 ALB가 앞에 서므로 이걸로 충분.
+    NodePort   노드의 포트를 열어 외부에서 직접 접근. Vagrant는 ALB가 없어 필요.
+  */}}
+  type: {{ if .Values.nodeport.enabled }}NodePort{{ else }}{{ .Values.service.type }}{{ end }}
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      {{/* 컨테이너가 듣는 포트. dockerfile.backend의 EXPOSE 8000 */}}
+      targetPort: http
+      protocol: TCP
+      {{- if .Values.nodeport.enabled }}
+      nodePort: {{ .Values.nodeport.port }}
+      {{- end }}
+  {{/*
+    이 라벨을 가진 파드를 찾는다.
+    deployment.yaml의 template.metadata.labels와 반드시 일치해야 한다.
+    component: web을 넣는 이유는 크롤러 파드까지 잡히면 안 되기 때문.
+  */}}
+  selector:
+    {{- include "reluxe.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: web
