@@ -1,12 +1,33 @@
-﻿# helm 바이너리·산출물
+# ---------------------------------------------------------------------------
+# reluxe-gitops
+# ---------------------------------------------------------------------------
+
+# helm 바이너리·산출물 (커밋 금지 — 15MB 바이너리)
 helm.exe
+helm
 LICENSE
 *.tgz
-out.yaml
-ing.yaml
+charts/**/charts/          # helm dependency update 산출물
 
-# 비밀값
+# 렌더링 결과 (helm template 출력)
+out.yaml
+out-aws.yaml
+ing.yaml
+*.rendered.yaml
+
+# 🔴 비밀값 — 실제 값이 든 파일은 절대 커밋하지 않는다
 secret-values.yaml
 values-local.yaml
+values-secret.yaml
 *.key
 *.pem
+kubeconfig
+.env
+.env.*
+!.env.example
+
+# 에디터·OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

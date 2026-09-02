@@ -48,12 +48,20 @@ agent:
   enabled: false   # Kubernetes 플러그인이 podTemplates로 동적 생성하므로 기본 agent는 끔
 
   podTemplates:
-    buildah: |
-      - name: buildah
-        label: buildah
+    # -----------------------------------------------------------------------
+    # 빌드 에이전트 — 컨테이너를 역할별로 나눈다.
+    #
+    # 🔴 한 컨테이너에 전부 넣지 않는 이유
+    #    buildah 이미지에는 uv·helm·git 이 없다. 파이프라인이 그것들을 쓰면
+    #    "command not found" 로 죽는다. Jenkins Kubernetes 플러그인은
+    #    container('이름') 블록으로 단계마다 다른 컨테이너를 고를 수 있다.
+    # -----------------------------------------------------------------------
+    build: |
+      - name: build
+        label: build
         nodeSelector: "workload=batch"   # 빌드는 배치 노드(node4)에서
-        # 🔴 node4는 workload=batch:NoSchedule taint가 걸려있다 (크롤러 CronJob과 동일).
-        #    toleration 없이는 파드가 Pending에서 멈춘다.
+        # 🔴 node4 는 workload=batch:NoSchedule taint 가 걸려 있다.
+        #    toleration 없이는 파드가 Pending 에서 멈춘다.
         yamlMergeStrategy: override
         yaml: |
           spec:
@@ -62,18 +70,47 @@ agent:
                 operator: "Equal"
                 value: "batch"
                 effect: "NoSchedule"
+            volumes:
+              # buildah 가 이미지 레이어를 푸는 공간.
+              # 크롤러 이미지가 3.59GB 라 컨테이너 기본 저장소로는 부족하다.
+              - name: buildah-storage
+                emptyDir: {}
         containers:
-          - name: buildah
-            image: quay.io/buildah/stable:latest
+          # --- 파이썬 lint/test 용 -------------------------------------------
+          - name: python
+            # 앱과 같은 3.13 을 쓴다. uv 는 파이프라인 첫 줄에서 설치한다.
+            image: python:3.13-slim
             command: "sleep"
             args: "99d"
-            # 🔴 Buildah가 rootless로 이미지를 빌드하려면 특별 권한이 필요하다.
-            #    node4가 배치 전용이라 privileged를 허용해도 웹 파드에 영향 없음.
-            privileged: true
             resourceRequestCpu: "500m"
             resourceRequestMemory: "1Gi"
             resourceLimitCpu: "2"
             resourceLimitMemory: "2Gi"
+
+          # --- 이미지 빌드용 -------------------------------------------------
+          - name: buildah
+            image: quay.io/buildah/stable:latest
+            command: "sleep"
+            args: "99d"
+            # 🔴 rootless 빌드에도 특별 권한이 필요하다.
+            #    node4 가 배치 전용이라 웹 파드에는 영향이 없다.
+            privileged: true
+            resourceRequestCpu: "1"
+            resourceRequestMemory: "2Gi"
+            resourceLimitCpu: "2"
+            # 크롤러 이미지 3.59GB 빌드를 감안한 여유
+            resourceLimitMemory: "4Gi"
+
+          # --- helm lint/template · git 커밋용 --------------------------------
+          - name: tools
+            # ⚠️ Alpine 기반이라 git 이 기본 포함되지 않는다.
+            #    Jenkinsfile 에서 apk add --no-cache git 으로 설치한다.
+            #    (ENTRYPOINT 가 helm 이므로 command: sleep 으로 덮어써야 sh 가 돈다)
+            image: alpine/helm:3.16.3
+            command: "sleep"
+            args: "99d"
+            resourceRequestCpu: "200m"
+            resourceRequestMemory: "512Mi"
 
 rbac:
   create: true
