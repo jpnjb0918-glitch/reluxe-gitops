@@ -1,0 +1,42 @@
+# ---------------------------------------------------------------------------
+# argocd/application.yaml — Argo CD에게 "reluxe 차트를 이 클러스터에 맞춰라"
+#
+# reluxe-gitops 저장소(A/B가 올린 charts/reluxe/)를 이 리소스 하나가 감시한다.
+# 이후로는 kubectl apply를 쓰지 않는다 — git 커밋 → Argo CD 동기화로만 배포한다.
+# (④ 문서 0-D: "10번 이후로는 kubectl apply를 쓰지 않습니다")
+#
+# AWS 이관 시 바뀌는 건 valueFiles 한 줄뿐. (④ 문서 7장)
+# ---------------------------------------------------------------------------
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: reluxe
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    # 🔴 실제 조직/계정에 맞게 확인 필요. A/B가 쓰는 저장소 주소.
+    repoURL: https://github.com/jpnjb0918-glitch/reluxe-gitops.git
+    targetRevision: main
+    path: charts/reluxe
+    helm:
+      valueFiles:
+        - values-vagrant.yaml   # 🔴 AWS에서는 values-aws.yaml로 이 한 줄만 교체
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: reluxe
+
+  syncPolicy:
+    automated:
+      prune: true       # git에서 지운 리소스는 클러스터에서도 삭제
+      selfHeal: true     # kubectl edit으로 손대면 Argo CD가 되돌림
+    syncOptions:
+      - CreateNamespace=true   # reluxe 네임스페이스 없으면 자동 생성
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m

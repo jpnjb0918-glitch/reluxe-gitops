@@ -1,0 +1,83 @@
+# ---------------------------------------------------------------------------
+# helm-values/jenkins.yaml — jenkins/jenkins 차트 설치용 값
+#
+#   helm repo add jenkins https://charts.jenkins.io
+#   helm install jenkins jenkins/jenkins -n infra -f helm-values/jenkins.yaml
+#
+# node5에 컨트롤러가 뜨고, 빌드마다 에이전트 파드가 떴다 사라진다. (④ 문서 0-B, 8장)
+# node5 RAM 예산 중 Jenkins 몫은 4GB.
+# AWS 이관 시: storageClassName만 gp3로 바뀜. (🟢)
+#
+# 🔴 이미지 빌드는 Buildah로 한다 — k3s는 containerd라 Docker 데몬이 없다.
+#    Kaniko는 2025년 6월 아카이브됨. (④ 문서 7장)
+# ---------------------------------------------------------------------------
+
+controller:
+  nodeSelector:
+    workload: infra
+
+  serviceType: NodePort
+  servicePort: 8080
+  nodePort: 30808
+
+  resources:
+    requests: { cpu: 500m, memory: 1Gi }
+    limits: { cpu: "2", memory: 2Gi }
+
+  javaOpts: "-Xms512m -Xmx1536m"
+
+  persistence:
+    enabled: true
+    storageClass: local-path
+    size: 10Gi
+
+  # 파이프라인이 필요로 하는 플러그인
+  installPlugins:
+    - kubernetes:latest
+    - workflow-aggregator:latest
+    - git:latest
+    - configuration-as-code:latest
+    - credentials-binding:latest
+    - pipeline-stage-view:latest
+
+  # CloudeDX 저장소를 폴링/웹훅으로 감시하는 Job은 JCasC로 등록 가능하지만
+  # 최초엔 Jenkins UI에서 Multibranch Pipeline으로 직접 만드는 걸 권장 (문서에 없어 팀 확인 필요)
+
+# 빌드 실행용 에이전트 파드 템플릿 (Buildah)
+agent:
+  enabled: false   # Kubernetes 플러그인이 podTemplates로 동적 생성하므로 기본 agent는 끔
+
+  podTemplates:
+    buildah: |
+      - name: buildah
+        label: buildah
+        nodeSelector: "workload=batch"   # 빌드는 배치 노드(node4)에서
+        # 🔴 node4는 workload=batch:NoSchedule taint가 걸려있다 (크롤러 CronJob과 동일).
+        #    toleration 없이는 파드가 Pending에서 멈춘다.
+        yamlMergeStrategy: override
+        yaml: |
+          spec:
+            tolerations:
+              - key: "workload"
+                operator: "Equal"
+                value: "batch"
+                effect: "NoSchedule"
+        containers:
+          - name: buildah
+            image: quay.io/buildah/stable:latest
+            command: "sleep"
+            args: "99d"
+            # 🔴 Buildah가 rootless로 이미지를 빌드하려면 특별 권한이 필요하다.
+            #    node4가 배치 전용이라 privileged를 허용해도 웹 파드에 영향 없음.
+            privileged: true
+            resourceRequestCpu: "500m"
+            resourceRequestMemory: "1Gi"
+            resourceLimitCpu: "2"
+            resourceLimitMemory: "2Gi"
+
+rbac:
+  create: true
+
+serviceAccount:
+  create: true
+  name: jenkins

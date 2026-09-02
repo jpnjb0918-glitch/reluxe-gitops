@@ -1,0 +1,83 @@
+# ---------------------------------------------------------------------------
+# helm-values/kube-prometheus-stack.yaml — prometheus-community/kube-prometheus-stack 차트 설치용 값
+#
+#   helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+#   helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+#     -n infra -f helm-values/kube-prometheus-stack.yaml
+#
+# Prometheus·Grafana는 node5에, node-exporter(DaemonSet)는 전 노드에 뜬다. (④ 문서 0-B)
+# node5 RAM 예산 중 Prometheus 몫은 2~4GB.
+# AWS 이관 시: storageClassName만 gp3로 바뀜. (🟢)
+#
+# 🔴 전 노드 지표를 걷으려면 node-exporter가 taint 걸린 노드(node0 컨트롤,
+#    node4 배치)에도 떠야 한다 — tolerations를 Exists로 열어둬야 한다.
+# ---------------------------------------------------------------------------
+
+prometheus:
+  prometheusSpec:
+    nodeSelector:
+      workload: infra
+    retention: 7d
+    resources:
+      requests: { cpu: 250m, memory: 1Gi }
+      limits: { cpu: "1", memory: 3Gi }
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 20Gi
+    # 앱 자체 지표(/metrics)는 아직 없음 (④ 문서 10-3 미구현 목록).
+    # 나중에 백엔드에 /metrics가 생기면 ServiceMonitor를 추가한다.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    # 🔴 CNPG(postgres-cluster.yaml)가 만드는 건 ServiceMonitor가 아니라 PodMonitor다.
+    #    이게 없으면 postgres-cluster.yaml의 enablePodMonitor: true를 켜도 안 잡힌다.
+    podMonitorSelectorNilUsesHelmValues: false
+
+alertmanager:
+  enabled: false   # 테스트 단계라 알림 연동 전. 나중에 필요해지면 켬
+
+grafana:
+  nodeSelector:
+    workload: infra
+  persistence:
+    enabled: true
+    storageClassName: local-path
+    size: 5Gi
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { cpu: 500m, memory: 512Mi }
+  # 🔴 admin 비밀번호를 여기 적지 않는다. 미리 Secret을 만들고 참조만 한다.
+  #    kubectl create secret generic grafana-admin -n infra \
+  #      --from-literal=admin-user=admin \
+  #      --from-literal=admin-password="$(openssl rand -hex 12)"
+  admin:
+    existingSecret: grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
+  service:
+    type: NodePort
+    nodePort: 30300
+
+# 전 노드(node0~5) 지표 수집. taint 걸린 노드에도 떠야 하므로 전부 허용
+nodeExporter:
+  enabled: true
+  tolerations:
+    - operator: Exists
+      effect: NoSchedule
+    - operator: Exists
+      effect: NoExecute
+
+kubeStateMetrics:
+  enabled: true
+
+# 컨트롤 플레인(node0) 자체 지표는 k3s가 별도 포트로 노출하지 않는 경우가 많아
+# 기본은 꺼둠. 필요하면 팀 확인 후 활성화.
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeEtcd:
+  enabled: false
