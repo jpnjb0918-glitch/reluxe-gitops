@@ -1,0 +1,67 @@
+# ---------------------------------------------------------------------------
+# helm-values/argocd.yaml — argo/argo-cd 차트 설치용 값
+#
+#   helm repo add argo https://argoproj.github.io/argo-helm
+#   helm install argocd argo/argo-cd -n argocd --create-namespace -f helm-values/argocd.yaml
+#
+# node5에 뜬다. node5 RAM 예산 중 Argo CD 몫은 1~2GB. (④ 문서 8장)
+# AWS 이관 시: storageClassName만 gp3로 바뀜. 나머지는 거의 그대로. (🟢)
+#
+# ⚠️ --set을 쓰지 않는다. 여기 파일에 전부 남긴다.
+# ---------------------------------------------------------------------------
+
+global:
+  nodeSelector:
+    workload: infra
+
+# 자체 서명 인증서라 --insecure 필요 (사설 도메인, ACM 없음)
+configs:
+  params:
+    server.insecure: true
+
+  # 🔴 reluxe-gitops가 private repo라면 여기에 등록해야 Argo CD가 읽을 수 있다.
+  #    토큰은 여기 커밋하지 않는다 — configs.credentialTemplates 대신
+  #    Secret을 별도로 만들고 아래처럼 repositories만 등록한다.
+  #      kubectl create secret generic reluxe-gitops-creds -n argocd \
+  #        --from-literal=type=git \
+  #        --from-literal=url=https://github.com/jpnjb0918-glitch/reluxe-gitops.git \
+  #        --from-literal=password=<github-token> \
+  #        --from-literal=username=<github-id>
+  #      kubectl label secret reluxe-gitops-creds -n argocd \
+  #        argocd.argoproj.io/secret-type=repository
+  repositories:
+    reluxe-gitops:
+      url: https://github.com/jpnjb0918-glitch/reluxe-gitops.git
+      type: git
+
+# 리소스가 빠듯한 node5라 HA 구성은 끔 (테스트 단계)
+redis-ha:
+  enabled: false
+
+controller:
+  replicas: 1
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { cpu: 500m, memory: 512Mi }
+
+server:
+  replicas: 1
+  service:
+    type: NodePort
+    nodePortHttp: 30080
+    nodePortHttps: 30443
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { cpu: 300m, memory: 256Mi }
+
+repoServer:
+  replicas: 1
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { cpu: 300m, memory: 512Mi }
+
+applicationSet:
+  enabled: false   # 지금은 Application 1개뿐이라 불필요
+
+notifications:
+  enabled: false   # 알림 연동은 나중에
