@@ -198,6 +198,51 @@ config:
   #    FastAPI 가 프론트를 같은 출처로 서빙하므로 필요 없다.
   ALLOWED_ORIGINS: ""
 
+  # -------------------------------------------------------------------------
+  # 아래는 저장소 최신 반영분 (2026-09-02 커밋)
+  # -------------------------------------------------------------------------
+
+  # 🔴 운영 판별 스위치. "production" 이면 config.py 가 기동 가드를 켠다.
+  #    SESSION_SECRET · 계정 비밀번호 · S3 설정이 비어 있으면 RuntimeError 로
+  #    프로세스가 임포트 단계에서 죽는다. 쿠버네티스는 그걸 CrashLoopBackOff 로 보여준다.
+  #    values-vagrant 는 "local", values-aws 는 "production" 으로 덮어쓴다.
+  APP_ENV: "local"
+
+  # 세션 쿠키에 Secure 플래그. 기본값은 IS_PRODUCTION 을 따라간다.
+  # ⚠️ ALB 가 TLS 를 종료하고 뒤는 HTTP 라, 앱이 스스로 판단하면 항상 http 로 보인다.
+  #    그래서 환경변수로 명시한다. (uvicorn 은 --proxy-headers 로 이미 뜬다)
+  COOKIE_SECURE: "false"
+
+  # 업로드 파일 경로. 로컬 저장소 모드일 때만 쓰인다.
+  UPLOAD_DIR: "/srv/uploads"
+
+  # 쓰기 질의 타임아웃(초)
+  WRITE_TIMEOUT_SECONDS: "15"
+  # 읽기 복제본이 실패했을 때 writer 로 폴백하고 이 시간 동안은 재시도하지 않는다
+  READ_FALLBACK_COOLDOWN_SECONDS: "30"
+
+  # 실시간 검색 (같은 검색어 재요청 쿨다운 · 페이지 수 · 타임아웃)
+  LIVE_SEARCH_COOLDOWN_SECONDS: "120"
+  LIVE_SEARCH_MAX_PAGES: "1"
+  LIVE_SEARCH_TIMEOUT_SECONDS: "8"
+
+  # 시연용 판매자 계정 연결. 0 이면 연결하지 않는다.
+  CLIENT_SELLER_ID: "0"
+
+  # -------------------------------------------------------------------------
+  # 저장소 (app/domain/storage.py)
+  #
+  # 🔴 APP_ENV=production 이면 S3_BUCKET 이 비어 있을 때 기동을 거부한다.
+  #    단일 호스트 시연이라 로컬 디스크를 쓰려면 ALLOW_LOCAL_STORAGE=true 를 준다.
+  # -------------------------------------------------------------------------
+  S3_BUCKET: ""
+  AWS_REGION: ""
+  # 화면이 참조할 공개 주소 앞부분. 비우면 버킷 주소로 만든다.
+  # CloudFront 를 붙이면 그 도메인을 넣는다.
+  S3_PUBLIC_BASE: ""
+  # 로컬(Vagrant)은 S3 가 없으므로 true. AWS 에서는 false 로 두어 S3 를 강제한다.
+  ALLOW_LOCAL_STORAGE: "true"
+
 # ---------------------------------------------------------------------------
 # 비밀값 (Secret)
 #

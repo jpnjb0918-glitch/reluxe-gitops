@@ -69,6 +69,15 @@ config:
   ENABLE_CRAWLER: "false"   # 크롤링은 CronJob 담당
   ALLOWED_ORIGINS: ""
 
+  # 🔴 local 로 둔다. production 이면 config.py 가 기동 가드를 켜서
+  #    S3_BUCKET 이 비어 있을 때 프로세스가 죽는다.
+  APP_ENV: "local"
+  COOKIE_SECURE: "false"    # 로컬은 HTTP
+
+  # 로컬엔 S3 가 없으므로 디스크 저장을 허용한다
+  ALLOW_LOCAL_STORAGE: "true"
+  S3_BUCKET: ""
+
 # 🔴 Secret 은 미리 만들어 둔다 (README 참조). 차트는 참조만 한다.
 secret:
   create: false
