@@ -16,6 +16,14 @@ controller:
   nodeSelector:
     workload: infra
 
+# 🔴 node5는 workload=infra:NoSchedule taint가 걸려있다.
+#    toleration 없이는 controller 파드가 Pending에서 멈춘다. (argocd.yaml과 동일한 이유)
+  tolerations:
+    - key: workload
+      operator: Equal
+      value: infra
+      effect: NoSchedule
+
   serviceType: NodePort
   servicePort: 8080
   nodePort: 30808
