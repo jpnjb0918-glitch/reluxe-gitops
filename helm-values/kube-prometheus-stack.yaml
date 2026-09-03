@@ -17,6 +17,11 @@ prometheus:
   prometheusSpec:
     nodeSelector:
       workload: infra
+    tolerations:
+      - key: workload
+        operator: Equal
+        value: infra
+        effect: NoSchedule
     retention: 7d
     resources:
       requests: { cpu: 250m, memory: 1Gi }
@@ -42,6 +47,11 @@ alertmanager:
 grafana:
   nodeSelector:
     workload: infra
+  tolerations:
+    - key: workload
+      operator: Equal
+      value: infra
+      effect: NoSchedule
   persistence:
     enabled: true
     storageClassName: local-path
