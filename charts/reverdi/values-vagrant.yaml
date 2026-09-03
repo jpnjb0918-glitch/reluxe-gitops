@@ -40,7 +40,7 @@ topologySpread:
   enabled: true
   maxSkew: 1
   topologyKey: kubernetes.io/hostname   # 로컬엔 AZ 라벨이 없으므로 호스트명으로
-  whenUnsatisfiable: ScheduleAnyway     # 분산이 안 돼도 일단 띄운다
+  whenUnsatisfiable: DoNotSchedule   # 분산 실패를 조용히 넘기지 않는다
 
 pdb:
   enabled: true

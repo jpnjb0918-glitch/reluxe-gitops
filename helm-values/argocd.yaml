@@ -1,4 +1,4 @@
-﻿# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # helm-values/argocd.yaml ??argo/argo-cd 李⑦듃 ?ㅼ튂??媛?
 #
 #   helm repo add argo https://argoproj.github.io/argo-helm helm install argocd argo/argo-cd 
@@ -23,8 +23,13 @@ global:
 configs: params:
     server.insecure: true
 
+<<<<<<< HEAD
   # ?뵶 reverdi-gitops媛 private repo?쇰㈃ ?ш린???깅줉?댁빞 Argo CD媛 ?쎌쓣 ???덈떎. 
   #    ?좏겙? ?ш린 而ㅻ컠?섏? ?딅뒗????configs.credentialTemplates ??? 
+=======
+  # ?뵶 reverdi-gitops媛 private repo?쇰㈃ ?ш린???깅줉?댁빞 Argo CD媛 ?쎌쓣 ???덈떎.
+  #    ?좏겙? ?ш린 而ㅻ컠?섏? ?딅뒗????configs.credentialTemplates ???
+>>>>>>> e05a69b5189260097b5ed7d3697200aa11b5b5a4
   #    Secret??蹂꾨룄濡?留뚮뱾怨??꾨옒泥섎읆 repositories留??깅줉?쒕떎.
   #      kubectl create secret generic reverdi-gitops-creds -n argocd \ 
   #        --from-literal=type=git \ 
@@ -35,8 +40,14 @@ configs: params:
   repositories: reverdi-gitops:
       url: https://github.com/jpnjb0918-glitch/reverdi-gitops.git type: git
 
+<<<<<<< HEAD
 # 由ъ냼?ㅺ? 鍮좊벏??node5??HA 援ъ꽦? ??(?뚯뒪???④퀎)
 redis-ha: enabled: false
+=======
+# 由ъ냼?ㅺ? 鍮좊벏??node5??HA 援ъ꽦? ??(?뚯뒪???④퀎)
+redis-ha:
+  enabled: false
+>>>>>>> e05a69b5189260097b5ed7d3697200aa11b5b5a4
 
 controller: replicas: 1 resources:
     requests: { cpu: 100m, memory: 256Mi } limits: { cpu: 500m, memory: 512Mi }
@@ -48,7 +59,15 @@ server: replicas: 1 service:
 repoServer: replicas: 1 resources:
     requests: { cpu: 50m, memory: 128Mi } limits: { cpu: 300m, memory: 512Mi }
 
+<<<<<<< HEAD
 applicationSet: enabled: false # 吏湲덉? Application 1媛쒕퓧?대씪 遺덊븘??
 
 notifications: enabled: false # ?뚮┝ ?곕룞? ?섏쨷??
+=======
+applicationSet:
+  enabled: false   # 吏湲덉? Application 1媛쒕퓧?대씪 遺덊븘??
+
+notifications:
+  enabled: false   # ?뚮┝ ?곕룞? ?섏쨷??
+>>>>>>> e05a69b5189260097b5ed7d3697200aa11b5b5a4
 

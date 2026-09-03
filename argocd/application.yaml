@@ -1,11 +1,11 @@
-﻿# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 # argocd/application.yaml ??Argo CD?먭쾶 "reverdi 李⑦듃瑜????대윭?ㅽ꽣??留욎떠??
 #
-# reverdi-gitops ??μ냼(A/B媛 ?щ┛ charts/reverdi/)瑜???由ъ냼???섎굹媛 媛먯떆?쒕떎.
+# reverdi-gitops ??μ냼(A/B媛 ?щ┛ charts/reverdi/)瑜???由ъ냼???섎굹媛 媛먯떆?쒕떎.
 # ?댄썑濡쒕뒗 kubectl apply瑜??곗? ?딅뒗????git 而ㅻ컠 ??Argo CD ?숆린?붾줈留?諛고룷?쒕떎.
 # (??臾몄꽌 0-D: "10踰??댄썑濡쒕뒗 kubectl apply瑜??곗? ?딆뒿?덈떎")
 #
-# AWS ?닿? ??諛붾뚮뒗 嫄?valueFiles ??以꾨퓧. (??臾몄꽌 7??
+# AWS ?닿? ??諛붾뚮뒗 嫄?valueFiles ??以꾨퓧. (??臾몄꽌 7??
 # ---------------------------------------------------------------------------
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -16,7 +16,7 @@ spec:
   project: default
 
   source:
-    # ?뵶 ?ㅼ젣 議곗쭅/怨꾩젙??留욊쾶 ?뺤씤 ?꾩슂. A/B媛 ?곕뒗 ??μ냼 二쇱냼.
+    # ?뵶 ?ㅼ젣 議곗쭅/怨꾩젙??留욊쾶 ?뺤씤 ?꾩슂. A/B媛 ?곕뒗 ??μ냼 二쇱냼.
     repoURL: https://github.com/jpnjb0918-glitch/reverdi-gitops.git
     targetRevision: main
     path: charts/reverdi
@@ -30,8 +30,8 @@ spec:
 
   syncPolicy:
     automated:
-      prune: true       # git?먯꽌 吏??由ъ냼?ㅻ뒗 ?대윭?ㅽ꽣?먯꽌????젣
-      selfHeal: true     # kubectl edit?쇰줈 ?먮?硫?Argo CD媛 ?섎룎由?
+      prune: true       # git?먯꽌 吏??由ъ냼?ㅻ뒗 ?대윭?ㅽ꽣?먯꽌????젣
+      selfHeal: true     # kubectl edit?쇰줈 ?먮?硫?Argo CD媛 ?섎룎由?
     syncOptions:
       - CreateNamespace=true   # reverdi ?ㅼ엫?ㅽ럹?댁뒪 ?놁쑝硫??먮룞 ?앹꽦
     retry:
