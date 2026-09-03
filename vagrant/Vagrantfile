@@ -1,78 +1,74 @@
-# ---------------------------------------------------------------------------
-# Reverdi 로컬 검증 클러스터 — Rocky Linux 9 · k3s
+﻿# ---------------------------------------------------------------------------
+# Reverdi 濡쒖뺄 寃利??대윭?ㅽ꽣 ??Rocky Linux 9 쨌 k3s
 #
-# VM 6대 / RAM 40GB / 디스크 280GB
-#   node0  192.168.56.10  컨트롤 플레인 전용 (taint 로 워크로드 격리)
-#   node1  192.168.56.11  웹 + DB
-#   node2  192.168.56.12  웹 + DB
-#   node3  192.168.56.13  웹 + DB
-#   node4  192.168.56.14  배치 (크롤러 · Jenkins 빌드 에이전트)
-#   node5  192.168.56.15  인프라 (레지스트리 · MinIO · Jenkins · Argo CD)
+# VM 6? / RAM 40GB / ?붿뒪??280GB
+#   node0  192.168.56.10  而⑦듃濡??뚮젅???꾩슜 (taint 濡??뚰겕濡쒕뱶 寃⑸━)
+#   node1  192.168.56.11  ??+ DB
+#   node2  192.168.56.12  ??+ DB
+#   node3  192.168.56.13  ??+ DB
+#   node4  192.168.56.14  諛곗튂 (?щ·??쨌 Jenkins 鍮뚮뱶 ?먯씠?꾪듃)
+#   node5  192.168.56.15  ?명봽??(?덉??ㅽ듃由?쨌 MinIO 쨌 Jenkins 쨌 Argo CD)
 #
-# 사전 준비
-#   vagrant plugin install vagrant-disksize
+# ?ъ쟾 以鍮?#   vagrant plugin install vagrant-disksize
 #
-# 실행
-#   vagrant up            전체 (30~60분, 이미지 다운로드 포함)
-#   vagrant up node0      한 대씩 올리고 싶을 때
-# ---------------------------------------------------------------------------
+# ?ㅽ뻾
+#   vagrant up            ?꾩껜 (30~60遺? ?대?吏 ?ㅼ슫濡쒕뱶 ?ы븿)
+#   vagrant up node0      ??????щ━怨??띠쓣 ??# ---------------------------------------------------------------------------
 
 NODES = [
-  # 이름     IP끝  RAM(MB)  CPU  디스크
-  ["node0",  10,   4096,    2,   "30GB"],
+  # ?대쫫     IP?? RAM(MB)  CPU  ?붿뒪??  ["node0",  10,   4096,    2,   "30GB"],
   ["node1",  11,   4096,    2,   "30GB"],
   ["node2",  12,   4096,    2,   "30GB"],
   ["node3",  13,   4096,    2,   "30GB"],
-  ["node4",  14,   8192,    4,   "60GB"],   # 크롤러 이미지 3.59GB + 빌드 캐시
-  ["node5",  15,  16384,    4,  "100GB"],   # Jenkins + Argo CD + 레지스트리 + MinIO
+  ["node4",  14,   8192,    4,   "60GB"],   # ?щ·???대?吏 3.59GB + 鍮뚮뱶 罹먯떆
+  ["node5",  15,  16384,    4,  "100GB"],   # Jenkins + Argo CD + ?덉??ㅽ듃由?+ MinIO
 ]
 
 Vagrant.configure("2") do |config|
-  # 🔴 rockylinux/9 공식 박스는 다운로드 링크가 자주 깨진다.
-  #    Rocky 의 마이너 버전이 Vault 로 옮겨질 때 Vagrant 레지스트리 경로가
-  #    갱신되지 않아 404 가 난다. 2024년부터 반복 신고된 문제다.
+  # ?뵶 rockylinux/9 怨듭떇 諛뺤뒪???ㅼ슫濡쒕뱶 留곹겕媛 ?먯＜ 源⑥쭊??
+  #    Rocky ??留덉씠??踰꾩쟾??Vault 濡???꺼吏???Vagrant ?덉??ㅽ듃由?寃쎈줈媛
+  #    媛깆떊?섏? ?딆븘 404 媛 ?쒕떎. 2024?꾨???諛섎났 ?좉퀬??臾몄젣??
   #
-  #    bento 는 Chef 가 관리하는 박스라 링크가 안정적이다.
+  #    bento ??Chef 媛 愿由ы븯??諛뺤뒪??留곹겕媛 ?덉젙?곸씠??
   config.vm.box = "bento/rockylinux-9"
   config.vm.box_check_update = false
 
-  # 🔴 첫 부팅 타임아웃. 기본값 300초로는 부족하다.
-  #    node5 는 RAM 16GB + 디스크 100GB 리사이즈가 겹쳐 특히 오래 걸린다.
-  #    "Timed out while waiting for the machine to boot" 가 나면 여기를 더 늘린다.
+  # ?뵶 泥?遺????꾩븘?? 湲곕낯媛?300珥덈줈??遺議깊븯??
+  #    node5 ??RAM 16GB + ?붿뒪??100GB 由ъ궗?댁쫰媛 寃뱀퀜 ?뱁엳 ?ㅻ옒 嫄몃┛??
+  #    "Timed out while waiting for the machine to boot" 媛 ?섎㈃ ?ш린瑜????섎┛??
   config.vm.boot_timeout = 900
 
-  # bento 로도 안 되면 아래를 대신 쓴다 (위 두 줄을 주석 처리)
+  # bento 濡쒕룄 ???섎㈃ ?꾨옒瑜?????대떎 (????以꾩쓣 二쇱꽍 泥섎━)
   #   config.vm.box = "generic/rocky9"
   #
-  # 또는 Rocky 공식 이미지를 Vault 경로에서 직접 받는다
-  #   config.vm.box = "rockylinux/9"
+  # ?먮뒗 Rocky 怨듭떇 ?대?吏瑜?Vault 寃쎈줈?먯꽌 吏곸젒 諛쏅뒗??  #   config.vm.box = "rockylinux/9"
   #   config.vm.box_url = "https://dl.rockylinux.org/vault/rocky/9.6/images/x86_64/Rocky-9-Vagrant-Vbox.latest.x86_64.box"
 
-  # 🔴 Rocky 공식 박스에는 VirtualBox Guest Additions 가 없다.
-  #    공유 폴더를 켜두면 vagrant up 이 "mount.vboxsf: No such device" 로 멈춘다.
-  #    소스는 git clone 으로 넣는다.
+  # ?뵶 Rocky 怨듭떇 諛뺤뒪?먮뒗 VirtualBox Guest Additions 媛 ?녿떎.
+  #    怨듭쑀 ?대뜑瑜?耳쒕몢硫?vagrant up ??"mount.vboxsf: No such device" 濡?硫덉텣??
+  #    ?뚯뒪??git clone ?쇰줈 ?ｋ뒗??
   config.vm.synced_folder ".", "/vagrant", disabled: true
 
   NODES.each do |name, ip_last, mem, cpus, disk|
     config.vm.define name do |node|
       node.vm.hostname = name
 
-      # 🔴 VirtualBox 는 192.168.56.0/21 밖의 호스트 전용 대역을 기본 거부한다.
+      # ?뵶 VirtualBox ??192.168.56.0/21 諛뽰쓽 ?몄뒪???꾩슜 ???쓣 湲곕낯 嫄곕??쒕떎.
       node.vm.network "private_network", ip: "192.168.56.#{ip_last}"
 
       node.disksize.size = disk if Vagrant.has_plugin?("vagrant-disksize")
 
       node.vm.provider "virtualbox" do |vb|
-        vb.name   = "reluxe-#{name}"
+        vb.name   = "reverdi-#{name}"
         vb.memory = mem
         vb.cpus   = cpus
-        # ⚠️ cpuexecutioncap 은 넣지 않는다. 첫 부팅과 dnf install 이 느려져
-        #    boot_timeout 에 걸리는 원인이 된다.
-        #    호스트가 버거우면 vagrant up 을 한 대씩 나눠 실행하는 편이 낫다.
+        # ?좑툘 cpuexecutioncap ? ?ｌ? ?딅뒗?? 泥?遺?낃낵 dnf install ???먮젮??        #    boot_timeout ??嫄몃━???먯씤???쒕떎.
+        #    ?몄뒪?멸? 踰꾧굅?곕㈃ vagrant up ????????섎닠 ?ㅽ뻾?섎뒗 ?몄씠 ?ル떎.
       end
 
-      # 전 노드 공통 준비 (k3s 설치 전에 끝나야 한다)
+      # ???몃뱶 怨듯넻 以鍮?(k3s ?ㅼ튂 ?꾩뿉 ?앸굹???쒕떎)
       node.vm.provision "shell", path: "scripts/common.sh"
     end
   end
 end
+

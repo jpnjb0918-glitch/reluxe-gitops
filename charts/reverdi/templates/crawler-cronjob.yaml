@@ -11,9 +11,9 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ include "reluxe.fullname" . }}-crawler
+  name: {{ include "reverdi.fullname" . }}-crawler
   labels:
-    {{- include "reluxe.labels" . | nindent 4 }}
+    {{- include "reverdi.labels" . | nindent 4 }}
     app.kubernetes.io/component: crawler
 spec:
   schedule: {{ .Values.crawler.schedule | quote }}
@@ -26,7 +26,7 @@ spec:
       template:
         metadata:
           labels:
-            {{- include "reluxe.labels" . | nindent 12 }}
+            {{- include "reverdi.labels" . | nindent 12 }}
             app.kubernetes.io/component: crawler
         spec:
           restartPolicy: OnFailure
@@ -55,12 +55,12 @@ spec:
                 sizeLimit: {{ .Values.crawler.shmSize }}
           containers:
             - name: crawler
-              image: {{ include "reluxe.crawlerImage" . }}
+              image: {{ include "reverdi.crawlerImage" . }}
               imagePullPolicy: {{ .Values.image.pullPolicy }}
               command:
                 {{- toYaml .Values.crawler.command | nindent 16 }}
               envFrom:
-                {{- include "reluxe.envFrom" . | nindent 16 }}
+                {{- include "reverdi.envFrom" . | nindent 16 }}
               volumeMounts:
                 - name: dshm
                   mountPath: /dev/shm

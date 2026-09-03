@@ -1,5 +1,5 @@
 # ===========================================================================
-# reluxe 차트 기본값
+# reverdi 차트 기본값
 #
 # 이 파일이 모든 템플릿의 기준이다. 여기서 정한 키 이름을 templates/ 가 참조한다.
 # 환경별 차이는 values-vagrant.yaml · values-aws.yaml 이 이 값을 덮어쓴다.
@@ -14,7 +14,7 @@
 # 이름 재정의 (보통 건드리지 않는다)
 #
 # 릴리스 이름이 리소스 이름의 기준이 된다.
-#   helm install reluxe ./charts/reluxe  →  reluxe-web, reluxe-config ...
+#   helm install reverdi ./charts/reverdi  →  reverdi-web, reverdi-config ...
 # 이름을 강제로 바꾸고 싶을 때만 아래를 채운다.
 # ---------------------------------------------------------------------------
 nameOverride: ""
@@ -25,8 +25,8 @@ fullnameOverride: ""
 # ---------------------------------------------------------------------------
 image:
   # 환경별로 반드시 덮어쓴다
-  #   vagrant : 192.168.56.15:30500/reluxe-backend
-  #   aws     : <계정>.dkr.ecr.ap-northeast-2.amazonaws.com/reluxe-backend
+  #   vagrant : 192.168.56.15:30500/reverdi-backend
+  #   aws     : <계정>.dkr.ecr.ap-northeast-2.amazonaws.com/reverdi-backend
   repository: ""
   # Jenkins 가 커밋 해시 7자리로 갱신한다. 'latest' 를 쓰지 않는 이유는
   # 무엇이 떠 있는지 추적이 안 되고, pullPolicy 기본값이 Always 로 바뀌기 때문.
@@ -249,7 +249,7 @@ config:
 # 🔴 값은 여기 쓰지 않는다. 이 파일은 git 에 커밋된다.
 #
 # Vagrant : 아래 명령으로 미리 만들고 create: false 로 둔다
-#   kubectl create secret generic reluxe-secret -n reluxe \
+#   kubectl create secret generic reverdi-secret -n reverdi \
 #     --from-literal=DATABASE_URL='postgresql+asyncpg://...' \
 #     --from-literal=DATABASE_RO_URL='postgresql+asyncpg://...' \
 #     --from-literal=SESSION_SECRET="$(python3 -c 'import secrets;print(secrets.token_hex(32))')" \
@@ -262,7 +262,7 @@ secret:
   # true 로 두면 차트가 Secret 을 만든다. 로컬 임시 테스트용이며 값이 git 에 남는다.
   create: false
   # 차트가 참조할 Secret 이름
-  name: reluxe-secret
+  name: reverdi-secret
   # create: true 일 때만 쓰인다.
   # 🔴 여기에 실제 비밀번호를 넣고 커밋하지 말 것.
   #    값을 넣어야 한다면 --set 이나 별도 파일(-f)로 넘기고 그 파일은 .gitignore 에.

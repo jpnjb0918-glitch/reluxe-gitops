@@ -1,40 +1,40 @@
-# ---------------------------------------------------------------------------
-# helm-values/argocd.yaml — argo/argo-cd 차트 설치용 값
+﻿# ---------------------------------------------------------------------------
+# helm-values/argocd.yaml ??argo/argo-cd 李⑦듃 ?ㅼ튂??媛?
 #
 #   helm repo add argo https://argoproj.github.io/argo-helm
 #   helm install argocd argo/argo-cd -n argocd --create-namespace -f helm-values/argocd.yaml
 #
-# node5에 뜬다. node5 RAM 예산 중 Argo CD 몫은 1~2GB. (④ 문서 8장)
-# AWS 이관 시: storageClassName만 gp3로 바뀜. 나머지는 거의 그대로. (🟢)
+# node5???щ떎. node5 RAM ?덉궛 以?Argo CD 紐レ? 1~2GB. (??臾몄꽌 8??
+# AWS ?닿? ?? storageClassName留?gp3濡?諛붾? ?섎㉧吏??嫄곗쓽 洹몃?濡? (?윟)
 #
-# ⚠️ --set을 쓰지 않는다. 여기 파일에 전부 남긴다.
+# ?좑툘 --set???곗? ?딅뒗?? ?ш린 ?뚯씪???꾨? ?④릿??
 # ---------------------------------------------------------------------------
 
 global:
   nodeSelector:
     workload: infra
 
-# 자체 서명 인증서라 --insecure 필요 (사설 도메인, ACM 없음)
+# ?먯껜 ?쒕챸 ?몄쬆?쒕씪 --insecure ?꾩슂 (?ъ꽕 ?꾨찓?? ACM ?놁쓬)
 configs:
   params:
     server.insecure: true
 
-  # 🔴 reluxe-gitops가 private repo라면 여기에 등록해야 Argo CD가 읽을 수 있다.
-  #    토큰은 여기 커밋하지 않는다 — configs.credentialTemplates 대신
-  #    Secret을 별도로 만들고 아래처럼 repositories만 등록한다.
-  #      kubectl create secret generic reluxe-gitops-creds -n argocd \
+  # ?뵶 reverdi-gitops媛 private repo?쇰㈃ ?ш린???깅줉?댁빞 Argo CD媛 ?쎌쓣 ???덈떎.
+  #    ?좏겙? ?ш린 而ㅻ컠?섏? ?딅뒗????configs.credentialTemplates ???
+  #    Secret??蹂꾨룄濡?留뚮뱾怨??꾨옒泥섎읆 repositories留??깅줉?쒕떎.
+  #      kubectl create secret generic reverdi-gitops-creds -n argocd \
   #        --from-literal=type=git \
-  #        --from-literal=url=https://github.com/jpnjb0918-glitch/reluxe-gitops.git \
+  #        --from-literal=url=https://github.com/jpnjb0918-glitch/reverdi-gitops.git \
   #        --from-literal=password=<github-token> \
   #        --from-literal=username=<github-id>
-  #      kubectl label secret reluxe-gitops-creds -n argocd \
+  #      kubectl label secret reverdi-gitops-creds -n argocd \
   #        argocd.argoproj.io/secret-type=repository
   repositories:
-    reluxe-gitops:
-      url: https://github.com/jpnjb0918-glitch/reluxe-gitops.git
+    reverdi-gitops:
+      url: https://github.com/jpnjb0918-glitch/reverdi-gitops.git
       type: git
 
-# 리소스가 빠듯한 node5라 HA 구성은 끔 (테스트 단계)
+# 由ъ냼?ㅺ? 鍮좊벏??node5??HA 援ъ꽦? ??(?뚯뒪???④퀎)
 redis-ha:
   enabled: false
 
@@ -61,7 +61,8 @@ repoServer:
     limits: { cpu: 300m, memory: 512Mi }
 
 applicationSet:
-  enabled: false   # 지금은 Application 1개뿐이라 불필요
+  enabled: false   # 吏湲덉? Application 1媛쒕퓧?대씪 遺덊븘??
 
 notifications:
-  enabled: false   # 알림 연동은 나중에
+  enabled: false   # ?뚮┝ ?곕룞? ?섏쨷??
+

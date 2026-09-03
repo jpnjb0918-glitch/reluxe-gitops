@@ -12,9 +12,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "reluxe.fullname" . }}-web
+  name: {{ include "reverdi.fullname" . }}-web
   labels:
-    {{- include "reluxe.labels" . | nindent 4 }}
+    {{- include "reverdi.labels" . | nindent 4 }}
     app.kubernetes.io/component: web
 spec:
   {{/*
@@ -27,12 +27,12 @@ spec:
 
   {{/*
     🔴 selector는 불변 필드다. 배포 후에 바꾸면 업그레이드가 실패한다.
-       그래서 version처럼 자주 바뀌는 값이 들어간 reluxe.labels를 쓰면 안 된다.
+       그래서 version처럼 자주 바뀌는 값이 들어간 reverdi.labels를 쓰면 안 된다.
        selectorLabels(name + instance)만 쓴다.
   */}}
   selector:
     matchLabels:
-      {{- include "reluxe.selectorLabels" . | nindent 6 }}
+      {{- include "reverdi.selectorLabels" . | nindent 6 }}
       app.kubernetes.io/component: web
 
   strategy:
@@ -48,7 +48,7 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "reluxe.labels" . | nindent 8 }}
+        {{- include "reverdi.labels" . | nindent 8 }}
         app.kubernetes.io/component: web
       annotations:
         {{/*
@@ -88,13 +88,13 @@ spec:
           whenUnsatisfiable: {{ .Values.topologySpread.whenUnsatisfiable }}
           labelSelector:
             matchLabels:
-              {{- include "reluxe.selectorLabels" . | nindent 14 }}
+              {{- include "reverdi.selectorLabels" . | nindent 14 }}
               app.kubernetes.io/component: web
       {{- end }}
 
       containers:
         - name: web
-          image: {{ include "reluxe.image" . }}
+          image: {{ include "reverdi.image" . }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
 
           ports:
@@ -108,7 +108,7 @@ spec:
             app/config.py가 os.getenv("LOG_LEVEL") 식으로 읽으므로 맞아떨어진다.
           */}}
           envFrom:
-            {{- include "reluxe.envFrom" . | nindent 12 }}
+            {{- include "reverdi.envFrom" . | nindent 12 }}
 
           {{/*
             🔴 liveness와 readiness의 경로가 다르다. 바꿔 쓰면 장애가 커진다.

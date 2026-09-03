@@ -12,15 +12,15 @@ HorizontalPodAutoscaler — 부하에 따라 웹 파드 수를 조절
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ include "reluxe.fullname" . }}-web
+  name: {{ include "reverdi.fullname" . }}-web
   labels:
-    {{- include "reluxe.labels" . | nindent 4 }}
+    {{- include "reverdi.labels" . | nindent 4 }}
     app.kubernetes.io/component: web
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ include "reluxe.fullname" . }}-web
+    name: {{ include "reverdi.fullname" . }}-web
   minReplicas: {{ .Values.hpa.minReplicas }}
   maxReplicas: {{ .Values.hpa.maxReplicas }}
   metrics:

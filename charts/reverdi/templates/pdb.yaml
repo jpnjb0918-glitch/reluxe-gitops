@@ -15,15 +15,15 @@ replicas 3 에 minAvailable 2 면 한 번에 하나씩만 빠진다.
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ include "reluxe.fullname" . }}-web
+  name: {{ include "reverdi.fullname" . }}-web
   labels:
-    {{- include "reluxe.labels" . | nindent 4 }}
+    {{- include "reverdi.labels" . | nindent 4 }}
     app.kubernetes.io/component: web
 spec:
   minAvailable: {{ .Values.pdb.minAvailable }}
   {{/* Deployment 의 파드 라벨과 일치해야 한다 */}}
   selector:
     matchLabels:
-      {{- include "reluxe.selectorLabels" . | nindent 6 }}
+      {{- include "reverdi.selectorLabels" . | nindent 6 }}
       app.kubernetes.io/component: web
 {{- end }}

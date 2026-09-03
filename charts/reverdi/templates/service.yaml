@@ -5,16 +5,16 @@
 파드는 죽고 새로 뜨면서 IP가 계속 바뀐다. Service 이름은 그대로라
 다른 파드나 Ingress가 이 이름으로 찾아온다.
 
-  reluxe-web.reluxe.svc.cluster.local
+  reverdi-web.reverdi.svc.cluster.local
   └ 이름     └ 네임스페이스
 ===========================================================================
 */}}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "reluxe.fullname" . }}-web
+  name: {{ include "reverdi.fullname" . }}-web
   labels:
-    {{- include "reluxe.labels" . | nindent 4 }}
+    {{- include "reverdi.labels" . | nindent 4 }}
     app.kubernetes.io/component: web
 spec:
   {{/*
@@ -37,5 +37,5 @@ spec:
     component: web을 넣는 이유는 크롤러 파드까지 잡히면 안 되기 때문.
   */}}
   selector:
-    {{- include "reluxe.selectorLabels" . | nindent 4 }}
+    {{- include "reverdi.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: web

@@ -13,9 +13,9 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ include "reluxe.fullname" . }}-aggregate
+  name: {{ include "reverdi.fullname" . }}-aggregate
   labels:
-    {{- include "reluxe.labels" . | nindent 4 }}
+    {{- include "reverdi.labels" . | nindent 4 }}
     app.kubernetes.io/component: aggregate
 spec:
   schedule: {{ .Values.aggregate.schedule | quote }}
@@ -27,7 +27,7 @@ spec:
       template:
         metadata:
           labels:
-            {{- include "reluxe.labels" . | nindent 12 }}
+            {{- include "reverdi.labels" . | nindent 12 }}
             app.kubernetes.io/component: aggregate
         spec:
           restartPolicy: OnFailure
@@ -46,12 +46,12 @@ spec:
           containers:
             - name: aggregate
               {{/* 백엔드 이미지를 쓴다. Playwright 가 필요 없는 작업이다. */}}
-              image: {{ include "reluxe.image" . }}
+              image: {{ include "reverdi.image" . }}
               imagePullPolicy: {{ .Values.image.pullPolicy }}
               command:
                 {{- toYaml .Values.aggregate.command | nindent 16 }}
               envFrom:
-                {{- include "reluxe.envFrom" . | nindent 16 }}
+                {{- include "reverdi.envFrom" . | nindent 16 }}
               resources:
                 {{- toYaml .Values.aggregate.resources | nindent 16 }}
               securityContext:

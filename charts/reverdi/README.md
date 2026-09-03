@@ -1,4 +1,4 @@
-# reluxe Helm 차트 — 전체 (A 8개 + B 7개)
+# reverdi Helm 차트 — 전체 (A 8개 + B 7개)
 
 `④_작성할_YAML목록.md`의 그룹 A + B 파일입니다.
 
@@ -13,7 +13,7 @@
 | `pg_dump` 이미지 | `postgres:15-alpine` | **`17-alpine`** — RDS 가 PG17. 낮으면 거부됨 |
 | 크롤러 `/dev/shm` | **없음** | `emptyDir(medium: Memory)` 마운트 |
 | `pgdump` 저장 위치 | `/backup` 마운트 없음 | `emptyDir` + 업로드 TODO 표시 |
-| 이미지 이름 | `reluxe-web` | **`reluxe-backend`** — web 은 nginx 이미지 |
+| 이미지 이름 | `reverdi-web` | **`reverdi-backend`** — web 은 nginx 이미지 |
 | `values.yaml` 누락 키 | 5개 | 전부 추가 |
 
 ## 파일
@@ -33,23 +33,23 @@
 
 ```bash
 # 1) 문법 검사
-helm lint charts/reluxe
+helm lint charts/reverdi
 
 # 2) 렌더링 결과를 눈으로 확인 — 클러스터에 올리기 전 필수
-helm template charts/reluxe --debug | less
+helm template charts/reverdi --debug | less
 
 # 3) Secret 을 먼저 만든다 (차트는 참조만 한다)
-kubectl create namespace reluxe
-kubectl create secret generic reluxe-secret -n reluxe \
-  --from-literal=DATABASE_URL='postgresql+asyncpg://reluxe:PW@reluxe-db-rw.reluxe.svc:5432/reluxe' \
-  --from-literal=DATABASE_RO_URL='postgresql+asyncpg://reluxe:PW@reluxe-db-ro.reluxe.svc:5432/reluxe' \
+kubectl create namespace reverdi
+kubectl create secret generic reverdi-secret -n reverdi \
+  --from-literal=DATABASE_URL='postgresql+asyncpg://reverdi:PW@reverdi-db-rw.reverdi.svc:5432/reverdi' \
+  --from-literal=DATABASE_RO_URL='postgresql+asyncpg://reverdi:PW@reverdi-db-ro.reverdi.svc:5432/reverdi' \
   --from-literal=SESSION_SECRET="$(python3 -c 'import secrets;print(secrets.token_hex(32))')" \
   --from-literal=ADMIN_USERNAME=admin --from-literal=ADMIN_PASSWORD='바꿀것' \
   --from-literal=CLIENT_USERNAME=client --from-literal=CLIENT_PASSWORD='바꿀것'
 
 # 4) 설치
-helm upgrade --install reluxe charts/reluxe -n reluxe \
-  --set image.repository=192.168.56.15:30500/reluxe-backend \
+helm upgrade --install reverdi charts/reverdi -n reverdi \
+  --set image.repository=192.168.56.15:30500/reverdi-backend \
   --set image.tag=dev
 ```
 
@@ -66,16 +66,16 @@ pdb.* / hpa.*
 `deployment.yaml` 을 복사해 고치면 됩니다. 공통 함수는 `_helpers.tpl` 에 있습니다.
 
 ```
-{{ include "reluxe.fullname" . }}       이름
-{{ include "reluxe.labels" . }}         전체 라벨
-{{ include "reluxe.envFrom" . }}        ConfigMap + Secret 주입
-{{ include "reluxe.crawlerImage" . }}   크롤러 이미지 주소
+{{ include "reverdi.fullname" . }}       이름
+{{ include "reverdi.labels" . }}         전체 라벨
+{{ include "reverdi.envFrom" . }}        ConfigMap + Secret 주입
+{{ include "reverdi.crawlerImage" . }}   크롤러 이미지 주소
 ```
 
 **C (인프라)** — 아래 두 값을 알려주세요. `values-*.yaml` 에 들어갑니다.
 
 ```
-image.repository   레지스트리 주소 (예: 192.168.56.15:30500/reluxe-backend)
+image.repository   레지스트리 주소 (예: 192.168.56.15:30500/reverdi-backend)
 secret 의 DB 주소  CloudNativePG 가 만드는 -rw / -ro 서비스 이름
 ```
 

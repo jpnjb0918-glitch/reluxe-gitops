@@ -1,139 +1,134 @@
-# Vagrant 클러스터 — 처음부터 끝까지
+﻿# Vagrant ?대윭?ㅽ꽣 ??泥섏쓬遺???앷퉴吏
 
-> Rocky Linux 9 · k3s · VM 6대
-> **아무것도 안 깔린 상태**에서 앱이 뜰 때까지의 전 과정입니다.
+> Rocky Linux 9 쨌 k3s 쨌 VM 6?
+> **?꾨Т寃껊룄 ??源붾┛ ?곹깭**?먯꽌 ?깆씠 ???뚭퉴吏????怨쇱젙?낅땲??
 
 ---
 
-## 0. 전체 그림 — 무엇이 어디로 가나
-
+## 0. ?꾩껜 洹몃┝ ??臾댁뾿???대뵒濡?媛??
 ```
-[내 PC (Windows)]
+[??PC (Windows)]
   Vagrant + VirtualBox
-     └─ VM 6대를 만든다
-     └─ helm.exe 는 차트 문법 검사용 (클러스터 접속은 VM 안에서)
+     ?붴? VM 6?瑜?留뚮뱺??     ?붴? helm.exe ??李⑦듃 臾몃쾿 寃?ъ슜 (?대윭?ㅽ꽣 ?묒냽? VM ?덉뿉??
 
-[저장소 2개]
-  CloudeDX          앱 소스 · Dockerfile     → node4 에서 clone (이미지 빌드용)
-  reluxe-gitops     차트 · infra · argocd    → node0 에서 clone (배포용)
+[??μ냼 2媛?
+  CloudeDX          ???뚯뒪 쨌 Dockerfile     ??node4 ?먯꽌 clone (?대?吏 鍮뚮뱶??
+  reverdi-gitops     李⑦듃 쨌 infra 쨌 argocd    ??node0 ?먯꽌 clone (諛고룷??
 
-[VM 6대]
-  node0   컨트롤 플레인          ← kubectl · helm 명령을 여기서 친다
-  node1~3 웹 파드 + DB 파드
-  node4   크롤러 · 이미지 빌드    ← 소스를 받아 이미지를 만든다
-  node5   레지스트리 · MinIO · Jenkins · Argo CD
+[VM 6?]
+  node0   而⑦듃濡??뚮젅??         ??kubectl 쨌 helm 紐낅졊???ш린??移쒕떎
+  node1~3 ???뚮뱶 + DB ?뚮뱶
+  node4   ?щ·??쨌 ?대?吏 鍮뚮뱶    ???뚯뒪瑜?諛쏆븘 ?대?吏瑜?留뚮뱺??  node5   ?덉??ㅽ듃由?쨌 MinIO 쨌 Jenkins 쨌 Argo CD
 ```
 
-### 🔴 저장소가 왜 둘인가
+### ?뵶 ??μ냼媛 ???섏씤媛
 
-| 저장소 | 담는 것 | 누가 커밋 |
+| ??μ냼 | ?대뒗 寃?| ?꾧? 而ㅻ컠 |
 |---|---|---|
-| **CloudeDX** | `app/` · `dockerfile.*` · `Jenkinsfile` | 개발자 |
-| **reluxe-gitops** | `charts/` · `infra/` · `argocd/` · `helm-values/` | Jenkins (이미지 태그만) |
+| **CloudeDX** | `app/` 쨌 `dockerfile.*` 쨌 `Jenkinsfile` | 媛쒕컻??|
+| **reverdi-gitops** | `charts/` 쨌 `infra/` 쨌 `argocd/` 쨌 `helm-values/` | Jenkins (?대?吏 ?쒓렇留? |
 
-같은 저장소에 두면 **무한 루프**가 납니다.
-Jenkins 가 빌드 → 태그 커밋 → 그 커밋이 Jenkins 를 다시 깨움 → 반복.
+媛숈? ??μ냼???먮㈃ **臾댄븳 猷⑦봽**媛 ?⑸땲??
+Jenkins 媛 鍮뚮뱶 ???쒓렇 而ㅻ컠 ??洹?而ㅻ컠??Jenkins 瑜??ㅼ떆 源⑥? ??諛섎났.
 
 ---
 
-## 1. 내 PC 준비 (Windows)
+## 1. ??PC 以鍮?(Windows)
 
 ### 1-1. VirtualBox
 
-`https://www.virtualbox.org/wiki/Downloads` → Windows hosts
+`https://www.virtualbox.org/wiki/Downloads` ??Windows hosts
 
-> ⚠️ **Hyper-V 와 충돌할 수 있습니다.** WSL2 나 Docker Desktop 을 쓰고 있다면
-> VirtualBox 7.1 이상을 쓰세요. 그래도 VM 이 안 뜨면 관리자 PowerShell 에서:
+> ?좑툘 **Hyper-V ? 異⑸룎?????덉뒿?덈떎.** WSL2 ??Docker Desktop ???곌퀬 ?덈떎硫?> VirtualBox 7.1 ?댁긽???곗꽭?? 洹몃옒??VM ?????⑤㈃ 愿由ъ옄 PowerShell ?먯꽌:
 > ```powershell
 > bcdedit /enum | findstr hypervisorlaunchtype
 > ```
-> `Off` 로 바꾸면 VirtualBox 는 되지만 **WSL2·Docker Desktop 이 함께 죽습니다.**
+> `Off` 濡?諛붽씀硫?VirtualBox ???섏?留?**WSL2쨌Docker Desktop ???④퍡 二쎌뒿?덈떎.**
 
 ### 1-2. Vagrant
 
-`https://developer.hashicorp.com/vagrant/downloads` → Windows AMD64
+`https://developer.hashicorp.com/vagrant/downloads` ??Windows AMD64
 
-설치 후 **PowerShell 을 새로 열어야** PATH 가 반영됩니다.
+?ㅼ튂 ??**PowerShell ???덈줈 ?댁뼱??* PATH 媛 諛섏쁺?⑸땲??
 
 ```powershell
 vagrant --version
 VBoxManage --version
 ```
 
-### 1-3. 디스크 플러그인
+### 1-3. ?붿뒪???뚮윭洹몄씤
 
 ```powershell
 vagrant plugin install vagrant-disksize
 ```
 
-**node4(60GB)·node5(100GB)는 기본 박스 용량으로 부족합니다.**
+**node4(60GB)쨌node5(100GB)??湲곕낯 諛뺤뒪 ?⑸웾?쇰줈 遺議깊빀?덈떎.**
 
-### 1-4. (선택) helm.exe
+### 1-4. (?좏깮) helm.exe
 
-차트 문법을 내 PC 에서 검사할 때만 필요합니다.
-`https://get.helm.sh/helm-v3.16.3-windows-amd64.zip` → `helm.exe` 하나만 꺼내 씁니다.
+李⑦듃 臾몃쾿????PC ?먯꽌 寃?ы븷 ?뚮쭔 ?꾩슂?⑸땲??
+`https://get.helm.sh/helm-v3.16.3-windows-amd64.zip` ??`helm.exe` ?섎굹留?爰쇰궡 ?곷땲??
 
-> 클러스터 접속은 VM 안에서 하므로 없어도 진행됩니다.
+> ?대윭?ㅽ꽣 ?묒냽? VM ?덉뿉???섎?濡??놁뼱??吏꾪뻾?⑸땲??
 
 ---
 
-## 2. VM 6대 만들기
-
+## 2. VM 6? 留뚮뱾湲?
 ```powershell
-cd D:\project\Reluxe\vagrant
+cd D:\project\reverdi\vagrant
 vagrant up
 ```
 
-**30~60분** 걸립니다. 박스 다운로드 + `dnf install` 포함입니다.
+**30~60遺?* 嫄몃┰?덈떎. 諛뺤뒪 ?ㅼ슫濡쒕뱶 + `dnf install` ?ы븿?낅땲??
 
-한 대씩 확인하며 올리려면:
+??????뺤씤?섎ŉ ?щ━?ㅻ㈃:
 
 ```powershell
 vagrant up node0
 vagrant status
 ```
 
-### ⚠️ 박스 다운로드가 404 로 실패하면
+### ?좑툘 諛뺤뒪 ?ㅼ슫濡쒕뱶媛 404 濡??ㅽ뙣?섎㈃
 
 ```
 An error occurred while downloading the remote file.
 The requested URL returned error: 404
 ```
 
-**Rocky 공식 박스(`rockylinux/9`)에서 반복되는 문제**입니다.
-마이너 버전이 Vault 로 옮겨질 때 Vagrant 레지스트리 경로가 갱신되지 않아 생깁니다.
+**Rocky 怨듭떇 諛뺤뒪(`rockylinux/9`)?먯꽌 諛섎났?섎뒗 臾몄젣**?낅땲??
+留덉씠??踰꾩쟾??Vault 濡???꺼吏???Vagrant ?덉??ㅽ듃由?寃쎈줈媛 媛깆떊?섏? ?딆븘 ?앷퉩?덈떎.
 
-Vagrantfile 은 이미 **`bento/rockylinux-9`**(Chef 관리, 링크 안정적)를 쓰고 있습니다.
-그래도 안 되면 Vagrantfile 안의 주석에 대안 두 가지가 있습니다.
+Vagrantfile ? ?대? **`bento/rockylinux-9`**(Chef 愿由? 留곹겕 ?덉젙??瑜??곌퀬 ?덉뒿?덈떎.
+洹몃옒?????섎㈃ Vagrantfile ?덉쓽 二쇱꽍???????媛吏媛 ?덉뒿?덈떎.
 
 ```powershell
-# 캐시가 꼬였으면 지우고 다시
+# 罹먯떆媛 瑗ъ??쇰㈃ 吏?곌퀬 ?ㅼ떆
 vagrant box list
 vagrant box remove rockylinux/9 --all
 vagrant up
 ```
 
-### ⚠️ `Timed out while waiting for the machine to boot`
+### ?좑툘 `Timed out while waiting for the machine to boot`
 
-첫 부팅이 기본 300초 안에 안 끝난 겁니다. **파일이 잘못된 게 아닙니다.**
+泥?遺?낆씠 湲곕낯 300珥??덉뿉 ???앸궃 寃곷땲?? **?뚯씪???섎せ??寃??꾨떃?덈떎.**
 
-특히 **node5** 는 RAM 16GB + 디스크 100GB 리사이즈가 겹쳐 오래 걸립니다.
-Vagrantfile 에 `boot_timeout = 900` 을 넣어뒀지만, 그래도 걸리면 더 늘리세요.
+?뱁엳 **node5** ??RAM 16GB + ?붿뒪??100GB 由ъ궗?댁쫰媛 寃뱀퀜 ?ㅻ옒 嫄몃┰?덈떎.
+Vagrantfile ??`boot_timeout = 900` ???ｌ뼱?吏留? 洹몃옒??嫄몃━硫????섎━?몄슂.
 
-**먼저 실제로 부팅 중인지 확인**
+**癒쇱? ?ㅼ젣濡?遺??以묒씤吏 ?뺤씤**
 
-VirtualBox 관리자에서 해당 VM 창을 열어보세요.
-로그인 프롬프트가 떠 있으면 **부팅은 됐고 Vagrant 만 기다리다 포기한** 것입니다.
+VirtualBox 愿由ъ옄?먯꽌 ?대떦 VM 李쎌쓣 ?댁뼱蹂댁꽭??
+濡쒓렇???꾨＼?꾪듃媛 ???덉쑝硫?**遺?낆? ?먭퀬 Vagrant 留?湲곕떎由щ떎 ?ш린??* 寃껋엯?덈떎.
 
 ```powershell
-vagrant status              # 어느 VM 이 running 인지
-vagrant reload node5        # 그 VM 만 다시
-vagrant provision node5     # 프로비저닝만 다시 (부팅은 됐을 때)
+vagrant status              # ?대뒓 VM ??running ?몄?
+vagrant reload node5        # 洹?VM 留??ㅼ떆
+vagrant provision node5     # ?꾨줈鍮꾩??앸쭔 ?ㅼ떆 (遺?낆? ?먯쓣 ??
 ```
 
-**호스트가 버거우면 한 대씩**
+**?몄뒪?멸? 踰꾧굅?곕㈃ ?????*
 
-6대를 한 번에 올리면 디스크 I/O 가 몰립니다.
+6?瑜???踰덉뿉 ?щ━硫??붿뒪??I/O 媛 紐곕┰?덈떎.
 
 ```powershell
 vagrant up node0
@@ -144,105 +139,101 @@ vagrant up node4
 vagrant up node5
 ```
 
-느려도 이 편이 확실합니다. 특히 **node4·node5 는 디스크가 커서** 따로 올리는 게 낫습니다.
+?먮젮?????몄씠 ?뺤떎?⑸땲?? ?뱁엳 **node4쨌node5 ???붿뒪?ш? 而ㅼ꽌** ?곕줈 ?щ━??寃??レ뒿?덈떎.
 
-### 정상 신호
+### ?뺤긽 ?좏샇
 
-각 VM 프로비저닝 마지막에 이렇게 나옵니다.
+媛?VM ?꾨줈鍮꾩???留덉?留됱뿉 ?대젃寃??섏샃?덈떎.
 
 ```
-SELinux : Enforcing      ← 이게 맞습니다. 끄지 않습니다
-Swap    : 0B             ← 0 이어야 kubelet 이 안 죽습니다
-준비 완료: node0
+SELinux : Enforcing      ???닿쾶 留욎뒿?덈떎. ?꾩? ?딆뒿?덈떎
+Swap    : 0B             ??0 ?댁뼱??kubelet ????二쎌뒿?덈떎
+以鍮??꾨즺: node0
 ```
 
-### VM 관리
-
+### VM 愿由?
 ```powershell
-vagrant status              # 6대 상태
-vagrant halt                # 전체 정지 (작업 끝날 때)
-vagrant up                  # 다시 시작
-vagrant reload node1        # 한 대만 재부팅
-vagrant destroy -f          # 전부 삭제 (처음부터 다시)
+vagrant status              # 6? ?곹깭
+vagrant halt                # ?꾩껜 ?뺤? (?묒뾽 ?앸궇 ??
+vagrant up                  # ?ㅼ떆 ?쒖옉
+vagrant reload node1        # ???留??щ???vagrant destroy -f          # ?꾨? ??젣 (泥섏쓬遺???ㅼ떆)
 ```
 
-> 💡 **작업이 끝나면 `vagrant halt`.** 6대가 RAM 40GB 를 잡고 있습니다.
+> ?뮕 **?묒뾽???앸굹硫?`vagrant halt`.** 6?媛 RAM 40GB 瑜??↔퀬 ?덉뒿?덈떎.
 
 ---
 
-## 3. SSH 접속
+## 3. SSH ?묒냽
 
-### 3-1. 기본
+### 3-1. 湲곕낯
 
 ```powershell
 vagrant ssh node0
 ```
 
-비밀번호가 필요 없습니다. Vagrant 가 키를 자동 관리합니다. 나올 때는 `exit`.
+鍮꾨?踰덊샇媛 ?꾩슂 ?놁뒿?덈떎. Vagrant 媛 ?ㅻ? ?먮룞 愿由ы빀?덈떎. ?섏삱 ?뚮뒗 `exit`.
 
-### 3-2. VM 끼리
+### 3-2. VM ?쇰━
 
 ```bash
-# node0 안에서
-ssh vagrant@192.168.56.11      # 비밀번호: vagrant
+# node0 ?덉뿉??ssh vagrant@192.168.56.11      # 鍮꾨?踰덊샇: vagrant
 ```
 
-### 3-3. 🔴 파일을 VM 으로 옮기는 법
+### 3-3. ?뵶 ?뚯씪??VM ?쇰줈 ??린??踰?
+**怨듭쑀 ?대뜑瑜?猿먯뒿?덈떎.** Rocky 怨듭떇 諛뺤뒪??Guest Additions 媛 ?놁뼱??
+耳쒕몢硫?`vagrant up` ??`mount.vboxsf: No such device` 濡?硫덉땅?덈떎.
 
-**공유 폴더를 껐습니다.** Rocky 공식 박스에 Guest Additions 가 없어서,
-켜두면 `vagrant up` 이 `mount.vboxsf: No such device` 로 멈춥니다.
-
-**① git clone (권장)**
+**??git clone (沅뚯옣)**
 
 ```bash
 vagrant ssh node4
 git clone https://github.com/epqlffltm/CloudeDX.git
 ```
 
-가장 깔끔합니다. VM 은 NAT 로 인터넷에 나갑니다.
+媛??源붾걫?⑸땲?? VM ? NAT 濡??명꽣?룹뿉 ?섍컩?덈떎.
 
-**② 표준입력으로 밀어넣기**
+**???쒖??낅젰?쇰줈 諛?대꽔湲?*
 
 ```powershell
 Get-Content scripts\k3s-server.sh | vagrant ssh node0 -c "cat > /tmp/k3s-server.sh"
 vagrant ssh node0 -c "sudo bash /tmp/k3s-server.sh"
 ```
 
-**③ 붙여넣기**
+**??遺숈뿬?ｊ린**
 
 ```bash
 vagrant ssh node0
 cat > /tmp/setup.sh <<'EOF'
-(내용 붙여넣기)
+(?댁슜 遺숈뿬?ｊ린)
 EOF
 sudo bash /tmp/setup.sh
 ```
 
-> ⚠️ 한글 주석이 든 스크립트는 터미널 인코딩 때문에 깨질 수 있습니다. 그럴 땐 ①번을 쓰세요.
+> ?좑툘 ?쒓? 二쇱꽍?????ㅽ겕由쏀듃???곕????몄퐫???뚮Ц??源⑥쭏 ???덉뒿?덈떎. 洹몃윺 ???좊쾲???곗꽭??
 
 ---
 
-## 4. k3s 설치
+## 4. k3s ?ㅼ튂
 
-### 4-1. node0 — 서버
+### 4-1. node0 ???쒕쾭
 
 ```powershell
 Get-Content scripts\k3s-server.sh | vagrant ssh node0 -c "cat > /tmp/k3s-server.sh"
 vagrant ssh node0 -c "sudo bash /tmp/k3s-server.sh"
 ```
 
-마지막에 **토큰**이 나옵니다. 복사해두세요.
+留덉?留됱뿉 **?좏겙**???섏샃?덈떎. 蹂듭궗?대몢?몄슂.
 
 ```
 K10abc123def456...::server:xxxxxxxx
 ```
 
-### 4-2. node1~5 — 에이전트
+### 4-2. node1~5 ???먯씠?꾪듃
 
-**IP 와 라벨이 각각 다릅니다.**
+**IP ? ?쇰꺼??媛곴컖 ?ㅻ쫭?덈떎.**
 
 ```powershell
-$T = "여기에_토큰_붙여넣기"
+$T = "?ш린???좏겙_遺숈뿬?ｊ린"
 
 Get-Content scripts\k3s-agent.sh | vagrant ssh node1 -c "cat > /tmp/a.sh"
 vagrant ssh node1 -c "sudo bash /tmp/a.sh 192.168.56.11 web '$T'"
@@ -260,14 +251,14 @@ Get-Content scripts\k3s-agent.sh | vagrant ssh node5 -c "cat > /tmp/a.sh"
 vagrant ssh node5 -c "sudo bash /tmp/a.sh 192.168.56.15 infra '$T'"
 ```
 
-### 4-3. 확인
+### 4-3. ?뺤씤
 
 ```bash
 vagrant ssh node0
 kubectl get nodes -o wide
 ```
 
-**6대가 `Ready`** 이고 **INTERNAL-IP 가 각자 다른지** 봅니다.
+**6?媛 `Ready`** ?닿퀬 **INTERNAL-IP 媛 媛곸옄 ?ㅻⅨ吏** 遊낅땲??
 
 ```
 NAME    STATUS   INTERNAL-IP
@@ -276,68 +267,67 @@ node1   Ready    192.168.56.11
 ...
 ```
 
-> 🔴 전부 `10.0.2.15` 로 같으면 `--node-ip` 가 안 먹은 겁니다.
-> Vagrant 의 NAT 인터페이스를 잡은 거라 노드 간 통신이 깨집니다. 재설치하세요.
+> ?뵶 ?꾨? `10.0.2.15` 濡?媛숈쑝硫?`--node-ip` 媛 ??癒뱀? 寃곷땲??
+> Vagrant ??NAT ?명꽣?섏씠?ㅻ? ?≪? 嫄곕씪 ?몃뱶 媛??듭떊??源⑥쭛?덈떎. ?ъ꽕移섑븯?몄슂.
 
 ---
 
-## 5. taint · 네임스페이스
+## 5. taint 쨌 ?ㅼ엫?ㅽ럹?댁뒪
 
-**node0 에서** 실행합니다.
+**node0 ?먯꽌** ?ㅽ뻾?⑸땲??
 
 ```powershell
 Get-Content scripts\setup-cluster.sh | vagrant ssh node0 -c "cat > /tmp/s.sh"
 vagrant ssh node0 -c "sudo bash /tmp/s.sh"
 ```
 
-라벨 보정 → taint → 네임스페이스 4개(`reluxe`·`infra`·`argocd`·`monitoring`)를 만듭니다.
+?쇰꺼 蹂댁젙 ??taint ???ㅼ엫?ㅽ럹?댁뒪 4媛?`reverdi`쨌`infra`쨌`argocd`쨌`monitoring`)瑜?留뚮벊?덈떎.
 
-> 🔴 **taint 를 빼먹으면 안 됩니다.** label 만으로는 다른 파드가
-> 배치·인프라 노드로 새어 들어오는 걸 막지 못합니다.
+> ?뵶 **taint 瑜?鍮쇰㉨?쇰㈃ ???⑸땲??** label 留뚯쑝濡쒕뒗 ?ㅻⅨ ?뚮뱶媛
+> 諛곗튂쨌?명봽???몃뱶濡??덉뼱 ?ㅼ뼱?ㅻ뒗 嫄?留됱? 紐삵빀?덈떎.
 
 ---
 
-## 6. 배포용 저장소 clone (node0)
+## 6. 諛고룷????μ냼 clone (node0)
 
 ```bash
 vagrant ssh node0
-git clone https://github.com/jpnjb0918-glitch/reluxe-gitops.git
-cd reluxe-gitops
+git clone https://github.com/jpnjb0918-glitch/reverdi-gitops.git
+cd reverdi-gitops
 ls
 # argocd  charts  helm-values  infra
 ```
 
-**앞으로의 kubectl · helm 명령은 전부 이 디렉터리에서** 칩니다.
+**?욎쑝濡쒖쓽 kubectl 쨌 helm 紐낅졊? ?꾨? ???붾젆?곕━?먯꽌** 移⑸땲??
 
-> 💡 내 PC 에서 파일을 고쳤으면 `git pull` 로 받아오세요.
-> VM 안에서 직접 고치면 다시 커밋하기 번거롭습니다.
+> ?뮕 ??PC ?먯꽌 ?뚯씪??怨좎낀?쇰㈃ `git pull` 濡?諛쏆븘?ㅼ꽭??
+> VM ?덉뿉??吏곸젒 怨좎튂硫??ㅼ떆 而ㅻ컠?섍린 踰덇굅濡?뒿?덈떎.
 
 ---
 
-## 7. 레지스트리
-
+## 7. ?덉??ㅽ듃由?
 ```bash
 kubectl apply -f infra/registry.yaml
-kubectl get pod -n infra -w      # Running 될 때까지
+kubectl get pod -n infra -w      # Running ???뚭퉴吏
 ```
 
-파드가 뜨면 **전 노드에 접속 설정을 배포**합니다.
+?뚮뱶媛 ?⑤㈃ **???몃뱶???묒냽 ?ㅼ젙??諛고룷**?⑸땲??
 
 ```powershell
-# PowerShell — vagrant 디렉터리에서
+# PowerShell ??vagrant ?붾젆?곕━?먯꽌
 foreach ($n in "node0","node1","node2","node3","node4","node5") {
   Get-Content ..\infra\registries.yaml | vagrant ssh $n -c "sudo tee /etc/rancher/k3s/registries.yaml > /dev/null"
   if ($n -eq "node0") { vagrant ssh $n -c "sudo systemctl restart k3s" }
   else                { vagrant ssh $n -c "sudo systemctl restart k3s-agent" }
-  Write-Host "$n 완료"
+  Write-Host "$n ?꾨즺"
 }
 ```
 
-> 🔴 `registries.yaml` 은 **kubectl 대상이 아닙니다.**
-> 쿠버네티스 리소스가 아니라 k3s(containerd)의 노드 설정 파일입니다.
-> 한 대라도 빠지면 **그 노드에서만** `ImagePullBackOff` 가 납니다.
+> ?뵶 `registries.yaml` ? **kubectl ??곸씠 ?꾨떃?덈떎.**
+> 荑좊쾭?ㅽ떚??由ъ냼?ㅺ? ?꾨땲??k3s(containerd)???몃뱶 ?ㅼ젙 ?뚯씪?낅땲??
+> ????쇰룄 鍮좎?硫?**洹??몃뱶?먯꽌留?* `ImagePullBackOff` 媛 ?⑸땲??
 
-**확인**
+**?뺤씤**
 
 ```bash
 curl http://192.168.56.15:30500/v2/_catalog
@@ -348,41 +338,39 @@ curl http://192.168.56.15:30500/v2/_catalog
 
 ## 8. DB (CloudNativePG)
 
-**오퍼레이터를 먼저** 깔아야 합니다. 없으면 `Cluster` 리소스를 못 알아듣습니다.
+**?ㅽ띁?덉씠?곕? 癒쇱?** 源붿븘???⑸땲?? ?놁쑝硫?`Cluster` 由ъ냼?ㅻ? 紐??뚯븘?ｌ뒿?덈떎.
 
 ```bash
-# node0 에 helm 설치
+# node0 ??helm ?ㅼ튂
 curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
 helm repo add cnpg https://cloudnative-pg.github.io/charts
 helm repo update
 helm install cnpg cnpg/cloudnative-pg -n cnpg-system --create-namespace
 
-# 오퍼레이터가 Running 이 된 뒤에
+# ?ㅽ띁?덉씠?곌? Running ?????ㅼ뿉
 kubectl apply -f infra/postgres-cluster.yaml
-kubectl get cluster -n reluxe -w
+kubectl get cluster -n reverdi -w
 ```
 
-`instances: 3` 이 전부 뜨면 됩니다. **primary 1 + replica 2** 입니다.
+`instances: 3` ???꾨? ?⑤㈃ ?⑸땲?? **primary 1 + replica 2** ?낅땲??
 
 ```bash
-kubectl get pod -n reluxe -o wide     # node1~3 에 흩어졌는지
+kubectl get pod -n reverdi -o wide     # node1~3 ???⑹뼱議뚮뒗吏
 ```
 
 ---
 
-## 9. 🔴 앱 Secret 만들기
-
-**차트는 Secret 을 만들지 않습니다. 참조만 합니다.**
+## 9. ?뵶 ??Secret 留뚮뱾湲?
+**李⑦듃??Secret ??留뚮뱾吏 ?딆뒿?덈떎. 李몄“留??⑸땲??**
 
 ```bash
-# CloudNativePG 가 만든 DB 비밀번호를 꺼낸다
-PW=$(kubectl get secret reluxe-db-app -n reluxe -o jsonpath='{.data.password}' | base64 -d)
-echo "DB 비밀번호: $PW"
+# CloudNativePG 媛 留뚮뱺 DB 鍮꾨?踰덊샇瑜?爰쇰궦??PW=$(kubectl get secret reverdi-db-app -n reverdi -o jsonpath='{.data.password}' | base64 -d)
+echo "DB 鍮꾨?踰덊샇: $PW"
 
-kubectl create secret generic reluxe-secret -n reluxe \
-  --from-literal=DATABASE_URL="postgresql+asyncpg://reluxe:${PW}@reluxe-db-rw.reluxe.svc:5432/reluxe" \
-  --from-literal=DATABASE_RO_URL="postgresql+asyncpg://reluxe:${PW}@reluxe-db-ro.reluxe.svc:5432/reluxe" \
+kubectl create secret generic reverdi-secret -n reverdi \
+  --from-literal=DATABASE_URL="postgresql+asyncpg://reverdi:${PW}@reverdi-db-rw.reverdi.svc:5432/reverdi" \
+  --from-literal=DATABASE_RO_URL="postgresql+asyncpg://reverdi:${PW}@reverdi-db-ro.reverdi.svc:5432/reverdi" \
   --from-literal=SESSION_SECRET="$(python3 -c 'import secrets;print(secrets.token_hex(32))')" \
   --from-literal=ADMIN_USERNAME=admin \
   --from-literal=ADMIN_PASSWORD="$(openssl rand -hex 12)" \
@@ -390,28 +378,28 @@ kubectl create secret generic reluxe-secret -n reluxe \
   --from-literal=CLIENT_PASSWORD="$(openssl rand -hex 12)"
 ```
 
-### 왜 이게 중요한가
+### ???닿쾶 以묒슂?쒓?
 
-**`SESSION_SECRET` 이 없으면 로그인이 동작하지 않습니다.**
+**`SESSION_SECRET` ???놁쑝硫?濡쒓렇?몄씠 ?숈옉?섏? ?딆뒿?덈떎.**
 
-`app/config.py` 는 미설정 시 `secrets.token_hex(32)` 로 **파드마다 다른 랜덤 값**을 만듭니다.
-replicas 3 이면 세 파드가 서로의 쿠키를 인정하지 않습니다.
+`app/config.py` ??誘몄꽕????`secrets.token_hex(32)` 濡?**?뚮뱶留덈떎 ?ㅻⅨ ?쒕뜡 媛?*??留뚮벊?덈떎.
+replicas 3 ?대㈃ ???뚮뱶媛 ?쒕줈??荑좏궎瑜??몄젙?섏? ?딆뒿?덈떎.
 
-**`-rw` / `-ro` 로 나뉜 이유**
+**`-rw` / `-ro` 濡??섎돏 ?댁쑀**
 
-CloudNativePG 가 두 서비스를 자동으로 만듭니다.
-쓰기는 primary(`-rw`), 읽기는 replica(`-ro`) 로 갑니다.
-**RDS 의 writer/reader 엔드포인트와 같은 모양**이라, 여기서 검증한 게 AWS 에서 그대로 통합니다.
+CloudNativePG 媛 ???쒕퉬?ㅻ? ?먮룞?쇰줈 留뚮벊?덈떎.
+?곌린??primary(`-rw`), ?쎄린??replica(`-ro`) 濡?媛묐땲??
+**RDS ??writer/reader ?붾뱶?ъ씤?몄? 媛숈? 紐⑥뼇**?대씪, ?ш린??寃利앺븳 寃?AWS ?먯꽌 洹몃?濡??듯빀?덈떎.
 
-> ⚠️ 다만 **앱이 아직 `DATABASE_RO_URL` 을 읽지 않습니다.**
-> `config.py` 에 `DATABASE_URL` 만 있습니다(백엔드 수정요청 1번).
-> 넣어두어도 무시되므로, 앱 수정이 끝난 뒤 의미가 생깁니다.
+> ?좑툘 ?ㅻ쭔 **?깆씠 ?꾩쭅 `DATABASE_RO_URL` ???쎌? ?딆뒿?덈떎.**
+> `config.py` ??`DATABASE_URL` 留??덉뒿?덈떎(諛깆뿏???섏젙?붿껌 1踰?.
+> ?ｌ뼱?먯뼱??臾댁떆?섎?濡? ???섏젙???앸궃 ???섎?媛 ?앷퉩?덈떎.
 
 ---
 
-## 10. 이미지 빌드 (node4)
+## 10. ?대?吏 鍮뚮뱶 (node4)
 
-Jenkins 를 세우기 전이라면 손으로 한 번 올려봅니다.
+Jenkins 瑜??몄슦湲??꾩씠?쇰㈃ ?먯쑝濡???踰??щ젮遊낅땲??
 
 ```bash
 vagrant ssh node4
@@ -419,114 +407,102 @@ vagrant ssh node4
 git clone https://github.com/epqlffltm/CloudeDX.git
 cd CloudeDX
 
-# 🔴 k3s 는 containerd 라 docker 명령이 없다. podman 을 쓴다.
+# ?뵶 k3s ??containerd ??docker 紐낅졊???녿떎. podman ???대떎.
 sudo dnf install -y podman
 
-sudo podman build -f dockerfile.backend -t 192.168.56.15:30500/reluxe-backend:dev .
-sudo podman push --tls-verify=false 192.168.56.15:30500/reluxe-backend:dev
+sudo podman build -f dockerfile.backend -t 192.168.56.15:30500/reverdi-backend:dev .
+sudo podman push --tls-verify=false 192.168.56.15:30500/reverdi-backend:dev
 ```
 
-크롤러도 필요하면 (3.59GB 라 오래 걸립니다):
+?щ·?щ룄 ?꾩슂?섎㈃ (3.59GB ???ㅻ옒 嫄몃┰?덈떎):
 
 ```bash
-sudo podman build -f dockerfile.crawler -t 192.168.56.15:30500/reluxe-crawler:dev .
-sudo podman push --tls-verify=false 192.168.56.15:30500/reluxe-crawler:dev
+sudo podman build -f dockerfile.crawler -t 192.168.56.15:30500/reverdi-crawler:dev .
+sudo podman push --tls-verify=false 192.168.56.15:30500/reverdi-crawler:dev
 ```
 
-**확인**
+**?뺤씤**
 
 ```bash
 curl http://192.168.56.15:30500/v2/_catalog
-# {"repositories":["reluxe-backend","reluxe-crawler"]}
+# {"repositories":["reverdi-backend","reverdi-crawler"]}
 ```
 
-### 🔴 `--tls-verify=false` 인 이유
+### ?뵶 `--tls-verify=false` ???댁쑀
 
-로컬 레지스트리를 HTTP 로 띄웠습니다.
-`infra/registries.yaml` 의 `insecure_skip_verify: true` 와 짝입니다.
-**AWS(ECR)에서는 HTTPS 라 필요 없습니다.**
+濡쒖뺄 ?덉??ㅽ듃由щ? HTTP 濡??꾩썱?듬땲??
+`infra/registries.yaml` ??`insecure_skip_verify: true` ? 吏앹엯?덈떎.
+**AWS(ECR)?먯꽌??HTTPS ???꾩슂 ?놁뒿?덈떎.**
 
 ---
 
-## 11. 앱 배포
+## 11. ??諛고룷
 
 ```bash
 vagrant ssh node0
-cd reluxe-gitops
+cd reverdi-gitops
 
-helm upgrade --install reluxe charts/reluxe -n reluxe \
-  -f charts/reluxe/values-vagrant.yaml
+helm upgrade --install reverdi charts/reverdi -n reverdi \
+  -f charts/reverdi/values-vagrant.yaml
 
-kubectl get pod -n reluxe -o wide -w
+kubectl get pod -n reverdi -o wide -w
 ```
 
-### 무슨 일이 일어나나
+### 臾댁뒯 ?쇱씠 ?쇱뼱?섎굹
 
 ```
-① migrate-job 이 먼저 실행         ← Helm 훅 (pre-install)
-   alembic upgrade head 로 DB 스키마 생성
-② 완료되면 웹 파드 3개 생성
-③ readinessProbe(/ready) 가 DB 확인
-④ Ready 가 되면 Service 에 등록
+??migrate-job ??癒쇱? ?ㅽ뻾         ??Helm ??(pre-install)
+   alembic upgrade head 濡?DB ?ㅽ궎留??앹꽦
+???꾨즺?섎㈃ ???뚮뱶 3媛??앹꽦
+??readinessProbe(/ready) 媛 DB ?뺤씤
+??Ready 媛 ?섎㈃ Service ???깅줉
 ```
 
-### 확인 항목
+### ?뺤씤 ??ぉ
 
 ```bash
-# 웹 파드가 node1·2·3 에 하나씩 흩어졌는가 (topologySpread)
-kubectl get pod -n reluxe -o wide
+# ???뚮뱶媛 node1쨌2쨌3 ???섎굹???⑹뼱議뚮뒗媛 (topologySpread)
+kubectl get pod -n reverdi -o wide
 
-# 마이그레이션이 먼저 끝났는가
-kubectl get job -n reluxe
+# 留덉씠洹몃젅?댁뀡??癒쇱? ?앸궗?붽?
+kubectl get job -n reverdi
 
-# 앱이 응답하는가
+# ?깆씠 ?묐떟?섎뒗媛
 curl http://192.168.56.11:30080/health
 # {"status":"ok"}
 
 curl http://192.168.56.11:30080/ready
-# DB 연결까지 확인
+# DB ?곌껐源뚯? ?뺤씤
 ```
 
-**브라우저에서** `http://192.168.56.11:30080` 으로도 열립니다.
+**釉뚮씪?곗??먯꽌** `http://192.168.56.11:30080` ?쇰줈???대┰?덈떎.
 
 ---
 
-## 12. 소스 ↔ YAML 이 어떻게 이어지나
-
+## 12. ?뚯뒪 ??YAML ???대뼸寃??댁뼱吏??
 ```
 CloudeDX/dockerfile.backend
-        │ podman build
-        ▼
-192.168.56.15:30500/reluxe-backend:dev        ← 레지스트리
-        │
-        │ values-vagrant.yaml 이 이 주소를 가리킨다
-        │   image:
-        │     repository: 192.168.56.15:30500/reluxe-backend
-        │     tag: dev
-        ▼
-charts/reluxe/templates/deployment.yaml
-        │   image: {{ include "reluxe.image" . }}
-        ▼
-파드가 이 이미지를 받아서 뜬다
+        ??podman build
+        ??192.168.56.15:30500/reverdi-backend:dev        ???덉??ㅽ듃由?        ??        ??values-vagrant.yaml ????二쇱냼瑜?媛由ы궓??        ??  image:
+        ??    repository: 192.168.56.15:30500/reverdi-backend
+        ??    tag: dev
+        ??charts/reverdi/templates/deployment.yaml
+        ??  image: {{ include "reverdi.image" . }}
+        ???뚮뱶媛 ???대?吏瑜?諛쏆븘???щ떎
 ```
 
-**환경변수는 이렇게 들어갑니다.**
+**?섍꼍蹂?섎뒗 ?대젃寃??ㅼ뼱媛묐땲??**
 
 ```
-values.yaml 의 config 블록
-        ▼
-templates/configmap.yaml 이 ConfigMap 을 만든다
-        ▼
-deployment.yaml 의 envFrom 이 통째로 주입
-        ▼
-app/config.py 의 os.getenv("LOG_LEVEL") 이 읽는다
-```
+values.yaml ??config 釉붾줉
+        ??templates/configmap.yaml ??ConfigMap ??留뚮뱺??        ??deployment.yaml ??envFrom ???듭㎏濡?二쇱엯
+        ??app/config.py ??os.getenv("LOG_LEVEL") ???쎈뒗??```
 
-**키 이름이 곧 환경변수 이름**이라 그대로 맞아떨어집니다.
+**???대쫫??怨??섍꼍蹂???대쫫**?대씪 洹몃?濡?留욎븘?⑥뼱吏묐땲??
 
 ---
 
-## 13. Jenkins · Argo CD (여유 되면)
+## 13. Jenkins 쨌 Argo CD (?ъ쑀 ?섎㈃)
 
 ```bash
 helm repo add jenkins https://charts.jenkins.io
@@ -538,57 +514,56 @@ helm install argocd argo/argo-cd -n argocd -f helm-values/argocd.yaml
 kubectl apply -f argocd/application.yaml
 ```
 
-**Argo CD 초기 비밀번호**
+**Argo CD 珥덇린 鍮꾨?踰덊샇**
 
 ```bash
 kubectl -n argocd get secret argocd-initial-admin-secret \
   -o jsonpath="{.data.password}" | base64 -d
 ```
 
-**접속** — 포트포워딩
-
+**?묒냽** ???ы듃?ъ썙??
 ```bash
 kubectl port-forward -n argocd svc/argocd-server 8080:443 --address 0.0.0.0
-# 브라우저에서 https://192.168.56.10:8080
+# 釉뚮씪?곗??먯꽌 https://192.168.56.10:8080
 ```
 
 ---
 
-## ⚠️ 자주 막히는 곳
-
-| 증상 | 원인 | 조치 |
+## ?좑툘 ?먯＜ 留됲엳??怨?
+| 利앹긽 | ?먯씤 | 議곗튂 |
 |---|---|---|
-| **박스 다운로드 404** | Rocky 마이너 버전이 Vault 로 옮겨졌는데 레지스트리가 옛 경로를 가리킴 | Vagrantfile 이 이미 `bento/rockylinux-9` 사용. 그래도 안 되면 파일 안의 대안 참조 |
-| **`Timed out while waiting for the machine to boot`** | 첫 부팅이 기본 300초를 넘김 (디스크 리사이즈·RAM 큰 노드) | `boot_timeout = 900` 이미 적용. `vagrant reload <노드>` 또는 한 대씩 `vagrant up` |
-| `vagrant up` 이 `mount.vboxsf` 에서 멈춤 | Guest Additions 없음 | Vagrantfile 에서 이미 껐음 |
-| VM 이 안 뜨거나 커널 패닉 | Hyper-V 충돌 | 1-1 참조 |
-| 전 노드 IP 가 `10.0.2.15` | `--node-ip` 누락 | k3s 재설치 |
-| 🔴 **웹훅 타임아웃 · 다른 노드 파드로 curl 실패** | **Flannel 이 NAT 인터페이스를 잡음** | `--flannel-iface=enp0s8`. 확인: `ip -d link show flannel.1 \| grep vxlan` → `local 192.168.56.x` 여야 정상 |
-| `tee: /etc/rancher/k3s/registries.yaml: No such file` | 에이전트에는 그 디렉터리가 없음 | `common.sh` 가 미리 생성. 수동이면 `sudo mkdir -p /etc/rancher/k3s` |
-| `secret "reluxe-db-app" not found` | `bootstrap.initdb.secret` 을 명시하면 CNPG 가 자동 생성하지 않음 | `kubectl create secret generic reluxe-db-app -n reluxe --type=kubernetes.io/basic-auth --from-literal=username=reluxe --from-literal=password=...` |
-| `configmap "reluxe-config" not found` (migrate) | 훅이 일반 리소스보다 먼저 실행됨 | 차트에서 해결됨 (migrate 가 ConfigMap 을 `optional` 로 참조) |
-| `sudo k3s: command not found` | RHEL 의 `sudo` 는 `/usr/local/bin` 을 PATH 에서 제외 | `sudo /usr/local/bin/k3s` 또는 kubeconfig 설정 후 `kubectl` |
-| 노드 간 파드 통신 안 됨 | firewalld 8472/udp 또는 CIDR | `firewall-cmd --list-all` |
-| 파드가 `Pending` | taint 걸린 노드에 toleration 없음 | `kubectl describe pod` |
-| `ImagePullBackOff` | `registries.yaml` 미배포 | 7번 다시 |
-| 파드가 영원히 `Ready` 안 됨 | DB 없음 (`/ready` 가 DB 확인) | 8번 먼저 |
-| `no matches for kind "Cluster"` | CNPG 오퍼레이터 미설치 | 8번 첫 줄 |
-| `CreateContainerConfigError` | Secret 없음 | 9번 |
-| kubelet 이 자꾸 죽음 | swap 활성 | `free -h` |
-| 로그인이 안 됨 | `SESSION_SECRET` 미주입 | 9번 |
+| **諛뺤뒪 ?ㅼ슫濡쒕뱶 404** | Rocky 留덉씠??踰꾩쟾??Vault 濡???꺼議뚮뒗???덉??ㅽ듃由ш? ??寃쎈줈瑜?媛由ы궡 | Vagrantfile ???대? `bento/rockylinux-9` ?ъ슜. 洹몃옒?????섎㈃ ?뚯씪 ?덉쓽 ???李몄“ |
+| **`Timed out while waiting for the machine to boot`** | 泥?遺?낆씠 湲곕낯 300珥덈? ?섍? (?붿뒪??由ъ궗?댁쫰쨌RAM ???몃뱶) | `boot_timeout = 900` ?대? ?곸슜. `vagrant reload <?몃뱶>` ?먮뒗 ?????`vagrant up` |
+| `vagrant up` ??`mount.vboxsf` ?먯꽌 硫덉땄 | Guest Additions ?놁쓬 | Vagrantfile ?먯꽌 ?대? 猿먯쓬 |
+| VM ?????④굅??而ㅻ꼸 ?⑤땳 | Hyper-V 異⑸룎 | 1-1 李몄“ |
+| ???몃뱶 IP 媛 `10.0.2.15` | `--node-ip` ?꾨씫 | k3s ?ъ꽕移?|
+| ?뵶 **?뱁썒 ??꾩븘??쨌 ?ㅻⅨ ?몃뱶 ?뚮뱶濡?curl ?ㅽ뙣** | **Flannel ??NAT ?명꽣?섏씠?ㅻ? ?≪쓬** | `--flannel-iface=enp0s8`. ?뺤씤: `ip -d link show flannel.1 \| grep vxlan` ??`local 192.168.56.x` ?ъ빞 ?뺤긽 |
+| `tee: /etc/rancher/k3s/registries.yaml: No such file` | ?먯씠?꾪듃?먮뒗 洹??붾젆?곕━媛 ?놁쓬 | `common.sh` 媛 誘몃━ ?앹꽦. ?섎룞?대㈃ `sudo mkdir -p /etc/rancher/k3s` |
+| `secret "reverdi-db-app" not found` | `bootstrap.initdb.secret` ??紐낆떆?섎㈃ CNPG 媛 ?먮룞 ?앹꽦?섏? ?딆쓬 | `kubectl create secret generic reverdi-db-app -n reverdi --type=kubernetes.io/basic-auth --from-literal=username=reverdi --from-literal=password=...` |
+| `configmap "reverdi-config" not found` (migrate) | ?낆씠 ?쇰컲 由ъ냼?ㅻ낫??癒쇱? ?ㅽ뻾??| 李⑦듃?먯꽌 ?닿껐??(migrate 媛 ConfigMap ??`optional` 濡?李몄“) |
+| `sudo k3s: command not found` | RHEL ??`sudo` ??`/usr/local/bin` ??PATH ?먯꽌 ?쒖쇅 | `sudo /usr/local/bin/k3s` ?먮뒗 kubeconfig ?ㅼ젙 ??`kubectl` |
+| ?몃뱶 媛??뚮뱶 ?듭떊 ????| firewalld 8472/udp ?먮뒗 CIDR | `firewall-cmd --list-all` |
+| ?뚮뱶媛 `Pending` | taint 嫄몃┛ ?몃뱶??toleration ?놁쓬 | `kubectl describe pod` |
+| `ImagePullBackOff` | `registries.yaml` 誘몃같??| 7踰??ㅼ떆 |
+| ?뚮뱶媛 ?곸썝??`Ready` ????| DB ?놁쓬 (`/ready` 媛 DB ?뺤씤) | 8踰?癒쇱? |
+| `no matches for kind "Cluster"` | CNPG ?ㅽ띁?덉씠??誘몄꽕移?| 8踰?泥?以?|
+| `CreateContainerConfigError` | Secret ?놁쓬 | 9踰?|
+| kubelet ???먭씀 二쎌쓬 | swap ?쒖꽦 | `free -h` |
+| 濡쒓렇?몄씠 ????| `SESSION_SECRET` 誘몄＜??| 9踰?|
 
 ---
 
-## 오늘 목표
+## ?ㅻ뒛 紐⑺몴
 
-| 단계 | 내용 | 예상 |
+| ?④퀎 | ?댁슜 | ?덉긽 |
 |:--:|---|---|
-| 1~2 | 설치 + VM 6대 | 1시간 |
-| 3~5 | k3s + taint | 30분 |
-| 6~7 | 저장소 clone + 레지스트리 | 30분 |
-| 8~9 | DB + Secret | 30분 |
-| 10 | 이미지 빌드 | 30분 |
-| **11** | **앱 배포** | ← **오늘 여기까지** |
-| 13 | Jenkins · Argo CD | 내일 |
+| 1~2 | ?ㅼ튂 + VM 6? | 1?쒓컙 |
+| 3~5 | k3s + taint | 30遺?|
+| 6~7 | ??μ냼 clone + ?덉??ㅽ듃由?| 30遺?|
+| 8~9 | DB + Secret | 30遺?|
+| 10 | ?대?吏 鍮뚮뱶 | 30遺?|
+| **11** | **??諛고룷** | ??**?ㅻ뒛 ?ш린源뚯?** |
+| 13 | Jenkins 쨌 Argo CD | ?댁씪 |
 
-**11번까지 가면 차트가 실제로 도는 걸 확인한 겁니다.** 큰 고비는 넘긴 거고요.
+**11踰덇퉴吏 媛硫?李⑦듃媛 ?ㅼ젣濡??꾨뒗 嫄??뺤씤??寃곷땲??** ??怨좊퉬???섍릿 嫄곌퀬??
+

@@ -16,9 +16,9 @@ DB 논리 백업 CronJob — pg_dump
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ include "reluxe.fullname" . }}-pgdump
+  name: {{ include "reverdi.fullname" . }}-pgdump
   labels:
-    {{- include "reluxe.labels" . | nindent 4 }}
+    {{- include "reverdi.labels" . | nindent 4 }}
     app.kubernetes.io/component: pgdump
 spec:
   schedule: {{ .Values.pgdump.schedule | quote }}
@@ -28,7 +28,7 @@ spec:
       template:
         metadata:
           labels:
-            {{- include "reluxe.labels" . | nindent 12 }}
+            {{- include "reverdi.labels" . | nindent 12 }}
             app.kubernetes.io/component: pgdump
         spec:
           restartPolicy: OnFailure
@@ -52,16 +52,16 @@ spec:
                 - -c
                 - |
                   set -euo pipefail
-                  FILE="{{ .Values.pgdump.workDir }}/reluxe-$(date +%Y%m%d%H%M%S).sql.gz"
+                  FILE="{{ .Values.pgdump.workDir }}/reverdi-$(date +%Y%m%d%H%M%S).sql.gz"
                   echo "덤프 시작: $FILE"
                   pg_dump "$DATABASE_URL" | gzip > "$FILE"
                   ls -lh "$FILE"
                   # TODO(C): 오브젝트 스토리지 업로드
-                  #   Vagrant  mc cp "$FILE" minio/reluxe-backup/
+                  #   Vagrant  mc cp "$FILE" minio/reverdi-backup/
                   #   AWS      aws s3 cp "$FILE" s3://<버킷>/backup/
                   echo "업로드 미구현. 이 파드가 끝나면 파일은 사라진다."
               envFrom:
-                {{- include "reluxe.envFrom" . | nindent 16 }}
+                {{- include "reverdi.envFrom" . | nindent 16 }}
               volumeMounts:
                 - name: work
                   mountPath: {{ .Values.pgdump.workDir }}
