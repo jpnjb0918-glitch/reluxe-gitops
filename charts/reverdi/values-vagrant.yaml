@@ -34,7 +34,7 @@ ingress:
 # 노드가 3대 이상이면 replicaCount 3 + topologySpread 로 분산을 검증한다.
 # VM 을 1대만 띄운다면 replicaCount 1, topologySpread false 로 낮춘다.
 # ---------------------------------------------------------------------------
-replicaCount: 3
+replicaCount: 4
 
 topologySpread:
   enabled: true

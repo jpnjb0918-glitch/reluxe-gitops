@@ -17,7 +17,7 @@ spec:
 
   source:
     # ?뵶 ?ㅼ젣 議곗쭅/怨꾩젙??留욊쾶 ?뺤씤 ?꾩슂. A/B媛 ?곕뒗 ??μ냼 二쇱냼.
-    repoURL: https://github.com/jpnjb0918-glitch/reverdi-gitops.git
+    repoURL: https://github.com/jpnjb0918-glitch/reverdi.git
     targetRevision: main
     path: charts/reverdi
     helm:
