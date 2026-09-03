@@ -1,68 +1,54 @@
 ﻿# ---------------------------------------------------------------------------
 # helm-values/argocd.yaml ??argo/argo-cd 李⑦듃 ?ㅼ튂??媛?
 #
-#   helm repo add argo https://argoproj.github.io/argo-helm
-#   helm install argocd argo/argo-cd -n argocd --create-namespace -f helm-values/argocd.yaml
+#   helm repo add argo https://argoproj.github.io/argo-helm helm install argocd argo/argo-cd 
+#   -n argocd --create-namespace -f helm-values/argocd.yaml
 #
-# node5???щ떎. node5 RAM ?덉궛 以?Argo CD 紐レ? 1~2GB. (??臾몄꽌 8??
-# AWS ?닿? ?? storageClassName留?gp3濡?諛붾? ?섎㉧吏??嫄곗쓽 洹몃?濡? (?윟)
+# node5???щ떎. node5 RAM ?덉궛 以?Argo CD 紐レ? 1~2GB. (??臾몄꽌 8?? AWS ?닿? ?? 
+# storageClassName留?gp3濡?諛붾? ?섎㉧吏??嫄곗쓽 洹몃?濡? (?윟)
 #
-# ?좑툘 --set???곗? ?딅뒗?? ?ш린 ?뚯씪???꾨? ?④릿??
+# ?좑툘 --set???곗? ?딅뒗?? ?ш린 ?뚯씪???꾨? ?④릿?? 
 # ---------------------------------------------------------------------------
 
-global:
+global: 
   nodeSelector:
     workload: infra
+  tolerations: 
+    - key: workload 
+      operator: Equal 
+      value: infra 
+      effect: NoSchedule
 
 # ?먯껜 ?쒕챸 ?몄쬆?쒕씪 --insecure ?꾩슂 (?ъ꽕 ?꾨찓?? ACM ?놁쓬)
-configs:
-  params:
+configs: params:
     server.insecure: true
 
-  # ?뵶 reverdi-gitops媛 private repo?쇰㈃ ?ш린???깅줉?댁빞 Argo CD媛 ?쎌쓣 ???덈떎.
-  #    ?좏겙? ?ш린 而ㅻ컠?섏? ?딅뒗????configs.credentialTemplates ???
+  # ?뵶 reverdi-gitops媛 private repo?쇰㈃ ?ш린???깅줉?댁빞 Argo CD媛 ?쎌쓣 ???덈떎. 
+  #    ?좏겙? ?ш린 而ㅻ컠?섏? ?딅뒗????configs.credentialTemplates ??? 
   #    Secret??蹂꾨룄濡?留뚮뱾怨??꾨옒泥섎읆 repositories留??깅줉?쒕떎.
-  #      kubectl create secret generic reverdi-gitops-creds -n argocd \
-  #        --from-literal=type=git \
-  #        --from-literal=url=https://github.com/jpnjb0918-glitch/reverdi-gitops.git \
-  #        --from-literal=password=<github-token> \
-  #        --from-literal=username=<github-id>
-  #      kubectl label secret reverdi-gitops-creds -n argocd \
+  #      kubectl create secret generic reverdi-gitops-creds -n argocd \ 
+  #        --from-literal=type=git \ 
+  #        --from-literal=url=https://github.com/jpnjb0918-glitch/reverdi-gitops.git \ 
+  #        --from-literal=password=<github-token> \ --from-literal=username=<github-id>
+  #      kubectl label secret reverdi-gitops-creds -n argocd \ 
   #        argocd.argoproj.io/secret-type=repository
-  repositories:
-    reverdi-gitops:
-      url: https://github.com/jpnjb0918-glitch/reverdi-gitops.git
-      type: git
+  repositories: reverdi-gitops:
+      url: https://github.com/jpnjb0918-glitch/reverdi-gitops.git type: git
 
 # 由ъ냼?ㅺ? 鍮좊벏??node5??HA 援ъ꽦? ??(?뚯뒪???④퀎)
-redis-ha:
-  enabled: false
+redis-ha: enabled: false
 
-controller:
-  replicas: 1
-  resources:
-    requests: { cpu: 100m, memory: 256Mi }
-    limits: { cpu: 500m, memory: 512Mi }
+controller: replicas: 1 resources:
+    requests: { cpu: 100m, memory: 256Mi } limits: { cpu: 500m, memory: 512Mi }
 
-server:
-  replicas: 1
-  service:
-    type: NodePort
-    nodePortHttp: 30080
-    nodePortHttps: 30443
-  resources:
-    requests: { cpu: 50m, memory: 128Mi }
-    limits: { cpu: 300m, memory: 256Mi }
+server: replicas: 1 service:
+    type: NodePort nodePortHttp: 30080 nodePortHttps: 30443
+  resources: requests: { cpu: 50m, memory: 128Mi } limits: { cpu: 300m, memory: 256Mi }
 
-repoServer:
-  replicas: 1
-  resources:
-    requests: { cpu: 50m, memory: 128Mi }
-    limits: { cpu: 300m, memory: 512Mi }
+repoServer: replicas: 1 resources:
+    requests: { cpu: 50m, memory: 128Mi } limits: { cpu: 300m, memory: 512Mi }
 
-applicationSet:
-  enabled: false   # 吏湲덉? Application 1媛쒕퓧?대씪 遺덊븘??
+applicationSet: enabled: false # 吏湲덉? Application 1媛쒕퓧?대씪 遺덊븘??
 
-notifications:
-  enabled: false   # ?뚮┝ ?곕룞? ?섏쨷??
+notifications: enabled: false # ?뚮┝ ?곕룞? ?섏쨷??
 
