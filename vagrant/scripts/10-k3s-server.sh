@@ -65,7 +65,7 @@ grep -q KUBECONFIG /home/vagrant/.bashrc || \
   echo 'export KUBECONFIG=$HOME/.kube/config' >> /home/vagrant/.bashrc
 
 echo ""
-kubectl get nodes -o wide
+/usr/local/bin/kubectl get nodes -o wide
 echo ""
 echo "  ✅ 컨트롤 플레인 준비 완료. 이제 워커 노드가 붙는다."
 echo ""
