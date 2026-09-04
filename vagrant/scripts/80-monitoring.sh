@@ -63,7 +63,8 @@ grafana:
 nodeExporter:
   enabled: true
   tolerations:
-    - { operator: Exists }
+    - { operator: Exists, effect: NoSchedule }
+    - { operator: Exists, effect: NoExecute }
 
 kubeStateMetrics: { enabled: true }
 # k3s 는 컨트롤 플레인 구성요소를 한 프로세스로 돌려 개별 수집이 안 된다
