@@ -31,3 +31,7 @@ kubeconfig
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Vagrant 상태 (VM 접속용 SSH 키 포함 — 절대 커밋 금지)
+vagrant/.vagrant/
+vagrant/build.log

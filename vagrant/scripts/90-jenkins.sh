@@ -35,6 +35,26 @@ controller:
   resources:
     requests: { cpu: 500m, memory: 2Gi }
     limits:   { cpu: "2",  memory: 4Gi }
+  # -------------------------------------------------------------------------
+  # ⚠️ 플러그인 버전을 :latest 로 둔다
+  #
+  #   장점  항상 최신. 우리가 검증한 시점(2026-09-04)에는 정상 동작했다.
+  #   위험  시간이 지나면 다른 조합이 설치된다. 플러그인끼리 의존성이
+  #         충돌하면 Jenkins 가 아예 뜨지 않는다.
+  #         (jenkinsci/helm-charts 이슈 #219 · #704 · #911 등 반복 보고)
+  #
+  #   왜 그대로 두나
+  #     특정 버전을 박으면 그 버전이 사라지거나 다른 플러그인이
+  #     더 높은 버전을 요구할 때 똑같이 깨진다.
+  #     운영이라면 플러그인을 미리 구운 커스텀 이미지를 쓰는 것이 맞지만,
+  #     학습·시연 환경에서는 과하다.
+  #
+  #   🔴 Jenkins 가 안 뜨면
+  #     kubectl logs -n infra jenkins-0 -c init
+  #     → "depends on X, but there is an older version" 이 보이면 의존성 충돌.
+  #       그 플러그인을 아래 목록에 명시적으로 추가하거나,
+  #       installLatestPlugins: false 로 차트 기본 버전을 쓴다.
+  # -------------------------------------------------------------------------
   installPlugins:
     - kubernetes:latest          # 빌드 에이전트를 파드로 띄운다
     - workflow-aggregator:latest # Pipeline

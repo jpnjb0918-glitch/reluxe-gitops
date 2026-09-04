@@ -1,0 +1,143 @@
+# ===========================================================================
+# Reverdi 로컬 검증 클러스터 — 전자동 구축
+#
+#   vagrant up
+#
+# 이 한 줄로 VM 6대를 만들고, k3s 를 깔고, 앱·DB·CI/CD·모니터링까지 올린다.
+# 전체 80~110분. 대부분 이미지 다운로드와 크롤러 빌드(2.7GB) 시간이다.
+#
+# ---------------------------------------------------------------------------
+# 사전 준비 (한 번만)
+#   vagrant plugin install vagrant-disksize
+#
+# 진행 상황은 화면에 그대로 나온다. 각 단계가 "무엇을 왜 하는지" 설명하며 진행한다.
+# 마지막에 접속 주소와 비밀번호가 한 번에 출력된다.
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# VM 정의
+#
+# 이름     IP끝  RAM(MB)  CPU  디스크   역할
+# ---------------------------------------------------------------------------
+NODES = [
+  ["node0",  10,   4096,  2,   "30GB"],   # 컨트롤 플레인 전용 (taint 로 격리)
+  ["node1",  11,   4096,  2,   "30GB"],   # 웹 + DB
+  ["node2",  12,   4096,  2,   "30GB"],   # 웹 + DB
+  ["node3",  13,   4096,  2,   "30GB"],   # 웹 + DB
+  ["node4",  14,   8192,  4,   "60GB"],   # 배치 · 이미지 빌드 (크롤러 2.7GB)
+  ["node5",  15,  16384,  4,  "100GB"],   # 레지스트리 · Jenkins · Argo CD · 모니터링
+]
+# 합계 RAM 40GB · 디스크 280GB — 호스트 RAM 이 최소 48GB 는 되어야 여유가 있다.
+
+Vagrant.configure("2") do |config|
+
+  # -------------------------------------------------------------------------
+  # 박스
+  #
+  # 🔴 rockylinux/9 공식 박스는 다운로드 링크가 자주 깨진다.
+  #    Rocky 의 마이너 버전이 Vault 로 옮겨질 때 Vagrant 레지스트리 경로가
+  #    갱신되지 않아 404 가 난다. 2024년부터 반복 신고된 문제다.
+  #    bento 는 Chef 가 관리해 링크가 안정적이다.
+  #
+  # Rocky 9 를 쓰는 이유 — EKS 워커 노드(Amazon Linux 2023)와 같은 RHEL 계열이다.
+  # dnf · firewalld · SELinux enforcing 이 그대로라 여기서 익힌 것이 AWS 에서 통한다.
+  # -------------------------------------------------------------------------
+  config.vm.box = "bento/rockylinux-9"
+  config.vm.box_check_update = false
+
+  # 🔴 첫 부팅 타임아웃. 기본 300초로는 부족하다.
+  #    node5 는 RAM 16GB + 디스크 100GB 리사이즈가 겹쳐 특히 오래 걸린다.
+  config.vm.boot_timeout = 900
+
+  # 🔴 공유 폴더를 끈다.
+  #    Rocky/bento 박스와 VirtualBox Guest Additions 버전이 어긋나면
+  #    vagrant up 이 "mount.vboxsf: No such device" 로 멈춘다.
+  #    스크립트는 아래 file provisioner 로 넣는다.
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+
+  NODES.each do |name, ip_last, mem, cpus, disk|
+    config.vm.define name do |node|
+      node.vm.hostname = name
+
+      # 🔴 VirtualBox 는 192.168.56.0/21 밖의 호스트 전용 대역을 기본 거부한다.
+      node.vm.network "private_network", ip: "192.168.56.#{ip_last}"
+
+      node.disksize.size = disk if Vagrant.has_plugin?("vagrant-disksize")
+
+      node.vm.provider "virtualbox" do |vb|
+        vb.name   = "reverdi-#{name}"
+        vb.memory = mem
+        vb.cpus   = cpus
+        # ⚠️ cpuexecutioncap 은 넣지 않는다.
+        #    첫 부팅과 dnf install 이 느려져 boot_timeout 에 걸리는 원인이 된다.
+      end
+
+      # -----------------------------------------------------------------
+      # 스크립트를 VM 안으로 복사
+      # 공유 폴더를 껐으므로 file provisioner 로 넣는다.
+      # -----------------------------------------------------------------
+      node.vm.provision "file", source: "scripts", destination: "/tmp/scripts"
+
+      # -----------------------------------------------------------------
+      # 🔴 CRLF 제거 — Windows 에서 만든 스크립트는 줄 끝에 \r 이 붙는다.
+      #
+      #    리눅스 셸이 그걸 명령의 일부로 읽어
+      #      set: pipefail\r: invalid option name
+      #      /bin/bash^M: bad interpreter
+      #    같은 오류가 난다.
+      #
+      #    🔴 순서가 중요하다 — file 로 복사한 "직후", 스크립트를 실행하기 "전에"
+      #       처리해야 한다. 뒤로 가면 이미 첫 스크립트가 깨진 뒤다.
+      #
+      #    macOS/리눅스 호스트에서는 애초에 \r 이 없어 아무 일도 하지 않는다.
+      # -----------------------------------------------------------------
+      node.vm.provision "fix-line-endings", type: "shell",
+        inline: "find /tmp/scripts -type f -name '*.sh' -exec sed -i 's/\\r$//' {} \\;"
+
+      # -----------------------------------------------------------------
+      # [1] 전 노드 공통 — k3s 설치 "전에" 끝나야 한다
+      # -----------------------------------------------------------------
+      node.vm.provision "common", type: "shell",
+        inline: "bash /tmp/scripts/00-common.sh"
+
+      # -----------------------------------------------------------------
+      # [2] k3s
+      #     서버(node0)가 먼저 떠야 에이전트가 붙을 수 있다.
+      #     Vagrant 는 NODES 순서대로 VM 을 올리므로 node0 이 항상 먼저다.
+      # -----------------------------------------------------------------
+      if name == "node0"
+        node.vm.provision "k3s", type: "shell",
+          inline: "bash /tmp/scripts/10-k3s-server.sh"
+      else
+        # 라벨은 노드 역할에 따라 다르다.
+        #   node1~3 web · node4 batch · node5 infra
+        label = case name
+                when "node4" then "batch"
+                when "node5" then "infra"
+                else              "web"
+                end
+        node.vm.provision "k3s", type: "shell",
+          inline: "bash /tmp/scripts/11-k3s-agent.sh 192.168.56.#{ip_last} #{label}"
+      end
+
+      # -----------------------------------------------------------------
+      # [3] node4 — 이미지 빌드
+      #     레지스트리(node5)가 떠 있어야 push 할 수 있으므로
+      #     node5 프로비저닝 뒤에 별도로 실행한다. (아래 node5 블록 참조)
+      # -----------------------------------------------------------------
+
+      # -----------------------------------------------------------------
+      # [4] 마지막 VM(node5)이 끝난 뒤 클러스터 전체를 구성한다.
+      #     이 시점에는 6대가 모두 Ready 이므로 taint·배포가 가능하다.
+      #
+      #     🔴 왜 node5 에서 실행하는데 node0 에 ssh 하나?
+      #        kubectl 은 node0 에만 설정되어 있다.
+      #        node5 는 "마지막으로 프로비저닝되는 VM"이라는 신호일 뿐이다.
+      # -----------------------------------------------------------------
+      if name == "node5"
+        node.vm.provision "cluster", type: "shell",
+          inline: "bash /tmp/scripts/20-trigger.sh"
+      end
+    end
+  end
+end

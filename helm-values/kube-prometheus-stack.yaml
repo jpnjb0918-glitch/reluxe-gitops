@@ -72,8 +72,37 @@ grafana:
     nodePort: 30300
 
 # 전 노드(node0~5) 지표 수집. taint 걸린 노드에도 떠야 하므로 전부 허용
+# ---------------------------------------------------------------------------
+# 🔴 node-exporter 는 서브차트다 — 키 이름에 주의
+#
+#   kube-prometheus-stack 은 node-exporter 를 직접 만들지 않고
+#   prometheus-node-exporter 라는 별도 차트를 가져다 쓴다.
+#
+#   서브차트에 값을 넘기려면 "서브차트 이름"을 키로 써야 한다.
+#     nodeExporter:              ← 상위 차트가 enabled 정도만 읽는다
+#     prometheus-node-exporter:  ← 서브차트로 전달되는 진짜 키
+#
+#   nodeExporter.tolerations 는 아무도 읽지 않아 조용히 무시된다.
+#   (prometheus-community/helm-charts 이슈 #2081 · #1347)
+#
+#   실제로 겪은 일 — 값을 고쳐도 렌더링 결과는 서브차트 기본값 그대로였다.
+#     기대  NoSchedule + NoExecute
+#     실제  NoSchedule 하나뿐  →  NoExecute taint 인 node0 에 안 뜸
+#
+#   왜 두 effect 를 다 써야 하나
+#     node0  CriticalAddonsOnly=true:NoExecute
+#     node4  workload=batch:NoSchedule
+#     node5  workload=infra:NoSchedule
+#     operator: Exists 에 effect 를 명시하면 그 effect 만 견딘다.
+#     전 노드 지표를 걷으려면 둘 다 필요하다.
+# ---------------------------------------------------------------------------
+
+# enabled 는 상위 차트가 읽어 서브차트를 켜고 끈다 — 여기 그대로 둔다
 nodeExporter:
   enabled: true
+
+# 🔴 실제 설정은 서브차트 이름으로 준다
+prometheus-node-exporter:
   tolerations:
     - operator: Exists
       effect: NoSchedule
