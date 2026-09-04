@@ -1,11 +1,19 @@
 # ---------------------------------------------------------------------------
-# argocd/application.yaml ??Argo CD?먭쾶 "reverdi 李⑦듃瑜????대윭?ㅽ꽣??留욎떠??
+# argocd/application.yaml
 #
-# reverdi-gitops ??μ냼(A/B媛 ?щ┛ charts/reverdi/)瑜???由ъ냼???섎굹媛 媛먯떆?쒕떎.
-# ?댄썑濡쒕뒗 kubectl apply瑜??곗? ?딅뒗????git 而ㅻ컠 ??Argo CD ?숆린?붾줈留?諛고룷?쒕떎.
-# (??臾몄꽌 0-D: "10踰??댄썑濡쒕뒗 kubectl apply瑜??곗? ?딆뒿?덈떎")
+# Argo CD 에게 "이 git 경로를 클러스터에 맞춰라" 라고 알리는 리소스.
 #
-# AWS ?닿? ??諛붾뚮뒗 嫄?valueFiles ??以꾨퓧. (??臾몄꽌 7??
+# 무엇이 달라지나
+#   기존   Jenkins → kubectl apply → 클러스터        (푸시 방식)
+#   지금   Jenkins → git 커밋 ← Argo CD 가 가져감    (풀 방식)
+#
+#   · Jenkins 가 클러스터를 만지지 않는다 → kubeconfig · EKS IAM 이 필요 없다
+#   · git 커밋 = 배포 이력. 지금 뭐가 떠 있는지 git 이 증명한다
+#   · 손으로 kubectl 로 바꿔도 selfHeal 이 되돌린다
+#   · 롤백 = git revert
+#
+# 🔴 Argo CD 는 Helm 을 helm template 으로만 쓴다.
+#    helm rollback · helm history 는 동작하지 않는다.
 # ---------------------------------------------------------------------------
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -16,13 +24,14 @@ spec:
   project: default
 
   source:
-    # ?뵶 ?ㅼ젣 議곗쭅/怨꾩젙??留욊쾶 ?뺤씤 ?꾩슂. A/B媛 ?곕뒗 ??μ냼 二쇱냼.
+    # 🔴 앱 소스(CloudeDX)가 아니라 배포 저장소다.
+    #    같은 저장소에 두면 Jenkins 가 커밋 → 그 커밋이 Jenkins 를 깨움 → 무한 루프.
     repoURL: https://github.com/jpnjb0918-glitch/reverdi.git
     targetRevision: main
     path: charts/reverdi
     helm:
       valueFiles:
-        - values-vagrant.yaml   # ?뵶 AWS?먯꽌??values-aws.yaml濡?????以꾨쭔 援먯껜
+        - values-vagrant.yaml
 
   destination:
     server: https://kubernetes.default.svc
@@ -30,14 +39,15 @@ spec:
 
   syncPolicy:
     automated:
-      prune: true       # git?먯꽌 吏??由ъ냼?ㅻ뒗 ?대윭?ㅽ꽣?먯꽌????젣
-      selfHeal: true     # kubectl edit?쇰줈 ?먮?硫?Argo CD媛 ?섎룎由?
+      # git 에서 지운 리소스는 클러스터에서도 삭제한다
+      prune: true
+      # 손으로 바꾼 것을 git 상태로 되돌린다
+      selfHeal: true
     syncOptions:
-      - CreateNamespace=true   # reverdi ?ㅼ엫?ㅽ럹?댁뒪 ?놁쑝硫??먮룞 ?앹꽦
+      - CreateNamespace=true
     retry:
       limit: 5
       backoff:
         duration: 10s
         factor: 2
         maxDuration: 3m
-

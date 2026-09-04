@@ -1,0 +1,311 @@
+<mxfile host="app.diagrams.net" agent="claude" pages="3">
+  <diagram name="1. 최종 구성" id="fin-1">
+    <mxGraphModel dx="2361" dy="1061" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="850" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="n101" value="구축 테스트 정리 — ① 최종 구성&lt;br&gt;&lt;span style=&#x27;font-size:12px;color:#5A5A5A&#x27;&gt;Vagrant + Rocky Linux 9 + k3s · VM 6대 · 앱 · DB HA · CI/CD · GitOps · 모니터링 전부 동작 확인&lt;/span&gt;" style="text;html=1;align=left;verticalAlign=middle;fontSize=20;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="40" y="24" width="1620" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n102" value="로컬 클러스터 — VM 6대 (RAM 40GB · 디스크 280GB)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F6FBF0;strokeColor=#7AA116;align=left;verticalAlign=top;spacingLeft=16;spacingTop=10;fontSize=13;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="40" y="100" width="1010" height="430" as="geometry" />
+        </mxCell>
+        <mxCell id="n103" value="&lt;b&gt;node0&lt;/b&gt; &amp;nbsp; 192.168.56.10 &amp;nbsp;·&amp;nbsp; 4GB &amp;nbsp;·&amp;nbsp; 컨트롤 플레인 전용&lt;br&gt;&lt;span style=&#x27;font-size:10px&#x27;&gt;taint &lt;b&gt;CriticalAddonsOnly&lt;/b&gt; — 워크로드가 뜨지 않는다. kubectl · helm 은 여기서 친다&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;fontSize=11;align=center;verticalAlign=middle;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="70" y="150" width="950" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="n104" value="&lt;b&gt;node1&lt;/b&gt; &amp;nbsp; .11 &amp;nbsp;·&amp;nbsp; 4GB&lt;br&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px&#x27;&gt;웹 파드 ×1&lt;br&gt;DB 파드 ×1&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=11;align=center;verticalAlign=middle;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="70" y="220" width="300" height="92" as="geometry" />
+        </mxCell>
+        <mxCell id="n105" value="&lt;b&gt;node2&lt;/b&gt; &amp;nbsp; .12 &amp;nbsp;·&amp;nbsp; 4GB&lt;br&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px&#x27;&gt;웹 파드 ×1&lt;br&gt;DB 파드 ×1&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=11;align=center;verticalAlign=middle;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="390" y="220" width="300" height="92" as="geometry" />
+        </mxCell>
+        <mxCell id="n106" value="&lt;b&gt;node3&lt;/b&gt; &amp;nbsp; .13 &amp;nbsp;·&amp;nbsp; 4GB&lt;br&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px&#x27;&gt;웹 파드 ×1&lt;br&gt;DB 파드 ×1&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#82B366;fontSize=11;align=center;verticalAlign=middle;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="710" y="220" width="300" height="92" as="geometry" />
+        </mxCell>
+        <mxCell id="n107" value="&lt;b&gt;node4&lt;/b&gt; &amp;nbsp; .14 &amp;nbsp;·&amp;nbsp; 8GB &amp;nbsp;·&amp;nbsp; 60GB&lt;br&gt;&lt;span style=&#x27;font-size:10px&#x27;&gt;크롤러 CronJob · Jenkins 빌드 에이전트&lt;br&gt;taint &lt;b&gt;workload=batch&lt;/b&gt; — toleration 있는 파드만&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFE6CC;strokeColor=#D79B00;fontSize=11;align=center;verticalAlign=middle;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="70" y="328" width="465" height="88" as="geometry" />
+        </mxCell>
+        <mxCell id="n108" value="&lt;b&gt;node5&lt;/b&gt; &amp;nbsp; .15 &amp;nbsp;·&amp;nbsp; 16GB &amp;nbsp;·&amp;nbsp; 100GB&lt;br&gt;&lt;span style=&#x27;font-size:10px&#x27;&gt;레지스트리 · Jenkins · Argo CD · Prometheus · Grafana&lt;br&gt;taint &lt;b&gt;workload=infra&lt;/b&gt;&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1D5E7;strokeColor=#9673A6;fontSize=11;align=center;verticalAlign=middle;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="555" y="328" width="465" height="88" as="geometry" />
+        </mxCell>
+        <mxCell id="n109" value="&lt;b&gt;네트워크&lt;/b&gt; &amp;nbsp; 사설망 &lt;b&gt;192.168.56.0/24&lt;/b&gt; (enp0s8) &amp;nbsp;·&amp;nbsp; 파드 10.42.0.0/16 &amp;nbsp;·&amp;nbsp; 서비스 10.43.0.0/16&lt;br&gt;&lt;span style=&#x27;color:#C7131F&#x27;&gt;🔴 VM 에 NIC 이 두 개 — enp0s3 은 Vagrant NAT(10.0.2.15)로 &lt;b&gt;6대 전부 동일&lt;/b&gt;.&lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;Flannel 이 이걸 잡으면 노드 간 통신이 깨진다 → &lt;b&gt;--flannel-iface=enp0s8&lt;/b&gt; 로 해결 (문제 6)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#7AA116;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="70" y="432" width="950" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="n110" value="AWS 구성과의 대응" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFCF5;strokeColor=#D05C17;align=left;verticalAlign=top;spacingLeft=16;spacingTop=10;fontSize=13;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="1090" y="100" width="570" height="430" as="geometry" />
+        </mxCell>
+        <mxCell id="n111" value="AWS" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#232F3E;strokeColor=#232F3E;fontSize=11;fontStyle=1;fontColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="150" width="255" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="n112" value="로컬 (검증 완료)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#232F3E;strokeColor=#232F3E;fontSize=11;fontStyle=1;fontColor=#ffffff;align=left;verticalAlign=middle;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="1385" y="150" width="245" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="n113" value="EKS 컨트롤 플레인" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#C9C0B6;fontSize=10;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="180" width="255" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="n114" value="node0 — taint 격리" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#C9C0B6;fontSize=10;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="1385" y="180" width="245" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="n115" value="reverdi-web 노드그룹" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#C9C0B6;fontSize=10;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="210" width="255" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="n116" value="node1~3 (workload=web)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#C9C0B6;fontSize=10;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="1385" y="210" width="245" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="n117" value="reverdi-batch 노드그룹" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#C9C0B6;fontSize=10;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="240" width="255" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="n118" value="node4 (taint)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#C9C0B6;fontSize=10;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="1385" y="240" width="245" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="n119" value="운영·관측 EC2" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#C9C0B6;fontSize=10;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="270" width="255" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="n120" value="node5 (taint)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#C9C0B6;fontSize=10;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="1385" y="270" width="245" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="n121" value="&lt;b&gt;RDS Multi-AZ + 복제본&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#C9C0B6;fontSize=10;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="300" width="255" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="n122" value="&lt;b&gt;CloudNativePG&lt;/b&gt; 3대" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#C9C0B6;fontSize=10;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="1385" y="300" width="245" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="n123" value="ECR" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#C9C0B6;fontSize=10;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="330" width="255" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="n124" value="Docker Registry" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#C9C0B6;fontSize=10;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="1385" y="330" width="245" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="n125" value="ALB Ingress" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#C9C0B6;fontSize=10;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="360" width="255" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="n126" value="NodePort 30080" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#C9C0B6;fontSize=10;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="1385" y="360" width="245" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="n127" value="CodePipeline / Jenkins" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#C9C0B6;fontSize=10;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="390" width="255" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="n128" value="&lt;b&gt;Jenkins&lt;/b&gt; (파드 에이전트)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#C9C0B6;fontSize=10;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="1385" y="390" width="245" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="n129" value="Argo CD" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#C9C0B6;fontSize=10;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="420" width="255" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="n130" value="&lt;b&gt;Argo CD&lt;/b&gt; (동일)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#C9C0B6;fontSize=10;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="1385" y="420" width="245" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="n131" value="CloudWatch + Managed Prom" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#C9C0B6;fontSize=10;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="450" width="255" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="n132" value="&lt;b&gt;kube-prometheus-stack&lt;/b&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#C9C0B6;fontSize=10;align=left;verticalAlign=middle;spacingLeft=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="1385" y="450" width="245" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="n133" value="&lt;b&gt;Rocky Linux 9 를 고른 이유&lt;/b&gt;&lt;br&gt;EKS 워커 노드(&lt;b&gt;Amazon Linux 2023&lt;/b&gt;)와 같은 RHEL 계열.&lt;br&gt;dnf · firewalld · &lt;b&gt;SELinux enforcing&lt;/b&gt; 이 그대로라&lt;br&gt;여기서 익힌 것이 AWS 에서 통한다." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#D05C17;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="490" width="510" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="n134" value="포트 · 접속" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F0FF;strokeColor=#8C4FFF;align=left;verticalAlign=top;spacingLeft=16;spacingTop=10;fontSize=13;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="40" y="560" width="1620" height="250" as="geometry" />
+        </mxCell>
+        <mxCell id="n135" value="&lt;b style=&#x27;font-size:15px&#x27;&gt;30080&lt;/b&gt;&lt;br&gt;&lt;b&gt;웹 앱&lt;/b&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;Reverdi 서비스&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#7AA116;fontSize=11;align=center;verticalAlign=middle;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="70" y="610" width="300" height="86" as="geometry" />
+        </mxCell>
+        <mxCell id="n136" value="&lt;b style=&#x27;font-size:15px&#x27;&gt;30081&lt;/b&gt;&lt;br&gt;&lt;b&gt;Argo CD&lt;/b&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;GitOps 대시보드&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8C4FFF;fontSize=11;align=center;verticalAlign=middle;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="386" y="610" width="300" height="86" as="geometry" />
+        </mxCell>
+        <mxCell id="n137" value="&lt;b style=&#x27;font-size:15px&#x27;&gt;30300&lt;/b&gt;&lt;br&gt;&lt;b&gt;Grafana&lt;/b&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;모니터링&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#D79B00;fontSize=11;align=center;verticalAlign=middle;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="702" y="610" width="300" height="86" as="geometry" />
+        </mxCell>
+        <mxCell id="n138" value="&lt;b style=&#x27;font-size:15px&#x27;&gt;30500&lt;/b&gt;&lt;br&gt;&lt;b&gt;레지스트리&lt;/b&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;이미지 저장소&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#D05C17;fontSize=11;align=center;verticalAlign=middle;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="1018" y="610" width="300" height="86" as="geometry" />
+        </mxCell>
+        <mxCell id="n139" value="&lt;b style=&#x27;font-size:15px&#x27;&gt;30808&lt;/b&gt;&lt;br&gt;&lt;b&gt;Jenkins&lt;/b&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;CI 파이프라인&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1D4ED8;fontSize=11;align=center;verticalAlign=middle;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="1334" y="610" width="300" height="86" as="geometry" />
+        </mxCell>
+        <mxCell id="n140" value="&lt;b&gt;접속 주소&lt;/b&gt; &amp;nbsp; http://192.168.56.&lt;b&gt;11&lt;/b&gt;:&amp;lt;포트&amp;gt; &amp;nbsp; &lt;span style=&#x27;color:#5A5A5A&#x27;&gt;— .11 ~ .15 아무 노드로 들어와도 된다. NodePort 는 어느 노드가 받든 Service 가 파드로 넘긴다&lt;/span&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;비밀번호&lt;/b&gt; &amp;nbsp; 설치할 때마다 무작위로 생성된다. 파일에 적어두지 않고 필요할 때 꺼내 쓴다&lt;br&gt;&lt;span style=&#x27;font-family:monospace;font-size:10px&#x27;&gt;kubectl get secret &amp;lt;이름&amp;gt; -n &amp;lt;ns&amp;gt; -o jsonpath=&#x27;{.data.&amp;lt;키&amp;gt;}&#x27; | base64 -d&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8C4FFF;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="70" y="712" width="1570" height="82" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="2. 검증 결과" id="fin-2">
+    <mxGraphModel dx="2361" dy="1061" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1160" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="n141" value="구축 테스트 정리 — ② 검증 결과&lt;br&gt;&lt;span style=&#x27;font-size:12px;color:#5A5A5A&#x27;&gt;설계한 대로 동작하는지 실제 명령으로 확인한 항목&lt;/span&gt;" style="text;html=1;align=left;verticalAlign=middle;fontSize=20;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="40" y="24" width="1620" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n142" value="인프라" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F6FBF0;strokeColor=#7AA116;align=left;verticalAlign=top;spacingLeft=16;spacingTop=10;fontSize=13;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="40" y="100" width="770" height="216" as="geometry" />
+        </mxCell>
+        <mxCell id="n143" value="✅ &amp;nbsp;&lt;b&gt;노드 6대 Ready · IP 각자 다름&lt;/b&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;kubectl get nodes -o wide&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#7AA116;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="64" y="146" width="722" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="n144" value="✅ &amp;nbsp;&lt;b&gt;taint 격리 3종&lt;/b&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;node0 CriticalAddonsOnly · node4 batch · node5 infra&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#7AA116;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="64" y="198" width="722" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="n145" value="✅ &amp;nbsp;&lt;b&gt;레지스트리 + registries.yaml&lt;/b&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;전 노드 배포 후 v2/_catalog 응답&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#7AA116;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="64" y="250" width="722" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="n146" value="애플리케이션" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F0FF;strokeColor=#8C4FFF;align=left;verticalAlign=top;spacingLeft=16;spacingTop=10;fontSize=13;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="850" y="100" width="770" height="268" as="geometry" />
+        </mxCell>
+        <mxCell id="n147" value="✅ &amp;nbsp;&lt;b&gt;웹 파드 3개 → node1·2·3 하나씩&lt;/b&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;topologySpread + matchLabelKeys&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8C4FFF;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="874" y="146" width="722" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="n148" value="✅ &amp;nbsp;&lt;b&gt;무중단 롤링 업데이트&lt;/b&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;maxUnavailable 0 — 새 파드 Ready 후 교체&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8C4FFF;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="874" y="198" width="722" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="n149" value="✅ &amp;nbsp;&lt;b&gt;마이그레이션 Helm 훅&lt;/b&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;alembic 14단계, 앱보다 먼저 실행&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8C4FFF;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="874" y="250" width="722" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="n150" value="✅ &amp;nbsp;&lt;b&gt;/ready 전부 true&lt;/b&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;database · database_write · migration&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8C4FFF;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="874" y="302" width="722" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="n151" value="데이터베이스" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF7F7;strokeColor=#C7131F;align=left;verticalAlign=top;spacingLeft=16;spacingTop=10;fontSize=13;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="40" y="370" width="770" height="216" as="geometry" />
+        </mxCell>
+        <mxCell id="n152" value="✅ &amp;nbsp;&lt;b&gt;CloudNativePG primary 1 + replica 2&lt;/b&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;node1·2·3 분산 (podAntiAffinity)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#C7131F;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="64" y="416" width="722" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="n153" value="✅ &amp;nbsp;&lt;b&gt;🔴 페일오버 자동 승격&lt;/b&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;웹 응답 200 &lt;b&gt;연속 유지&lt;/b&gt; · 파드 재시작 0&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#C7131F;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="64" y="468" width="722" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="n154" value="✅ &amp;nbsp;&lt;b&gt;읽기/쓰기 분리&lt;/b&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;앱 로그에 &lt;b&gt;-ro&lt;/b&gt; 연결 확인&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#C7131F;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="64" y="520" width="722" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="n155" value="배치 · 앱 기능" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFCF5;strokeColor=#D79B00;align=left;verticalAlign=top;spacingLeft=16;spacingTop=10;fontSize=13;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="850" y="370" width="770" height="268" as="geometry" />
+        </mxCell>
+        <mxCell id="n156" value="✅ &amp;nbsp;&lt;b&gt;크롤러 node4 에서만&lt;/b&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;Playwright + Chromium 동작&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#D79B00;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="874" y="416" width="722" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="n157" value="✅ &amp;nbsp;&lt;b&gt;/dev/shm tmpfs 1.0G&lt;/b&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;없으면 Chromium 이 죽는다&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#D79B00;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="874" y="468" width="722" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="n158" value="✅ &amp;nbsp;&lt;b&gt;중복 수집 방지&lt;/b&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&quot;다른 프로세스가 수집 중&quot;&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#D79B00;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="874" y="520" width="722" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="n159" value="✅ &amp;nbsp;&lt;b&gt;클릭 집계 · 중복 방지&lt;/b&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;2번 눌러 &lt;b&gt;1건&lt;/b&gt; (30분 버킷 유니크)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#D79B00;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="874" y="572" width="722" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="n160" value="CI/CD" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0F5FF;strokeColor=#1D4ED8;align=left;verticalAlign=top;spacingLeft=16;spacingTop=10;fontSize=13;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="40" y="630" width="770" height="216" as="geometry" />
+        </mxCell>
+        <mxCell id="n161" value="✅ &amp;nbsp;&lt;b&gt;Jenkins 파이프라인 &lt;b&gt;SUCCESS&lt;/b&gt;&lt;/b&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;lint → test → build → chart lint&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1D4ED8;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="64" y="676" width="722" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="n162" value="✅ &amp;nbsp;&lt;b&gt;인라인 파드 (컨테이너 5개)&lt;/b&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;python · postgres · buildah · tools · jnlp&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1D4ED8;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="64" y="728" width="722" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="n163" value="✅ &amp;nbsp;&lt;b&gt;Buildah 이미지 2종&lt;/b&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;docker 데몬 없이 빌드 → 레지스트리 push&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1D4ED8;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="64" y="780" width="722" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="n164" value="GitOps · 모니터링" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F6FBF0;strokeColor=#5E7F0F;align=left;verticalAlign=top;spacingLeft=16;spacingTop=10;fontSize=13;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="850" y="630" width="770" height="216" as="geometry" />
+        </mxCell>
+        <mxCell id="n165" value="✅ &amp;nbsp;&lt;b&gt;Argo CD &lt;b&gt;Synced / Healthy&lt;/b&gt;&lt;/b&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;git 변경 감지 → 자동 동기화&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#5E7F0F;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="874" y="676" width="722" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="n166" value="✅ &amp;nbsp;&lt;b&gt;Prometheus + Grafana&lt;/b&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;노드 · 파드 · 컨테이너 지표&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#5E7F0F;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="874" y="728" width="722" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="n167" value="✅ &amp;nbsp;&lt;b&gt;🔴 앱 지표 수집&lt;/b&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;ServiceMonitor → &lt;b&gt;http_requests_total&lt;/b&gt;&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#5E7F0F;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="874" y="780" width="722" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="n168" value="🔴 페일오버 시연 — 발표 영상 B" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF7F7;strokeColor=#C7131F;align=left;verticalAlign=top;spacingLeft=16;spacingTop=10;fontSize=13;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="40" y="880" width="1620" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="n169" value="&lt;span style=&#x27;font-family:monospace;font-size:11px&#x27;&gt;09:37:40  200&lt;br&gt;09:37:41  200 &amp;nbsp;&amp;nbsp;← primary 파드 삭제&lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;...&lt;br&gt;09:38:08  200 &amp;nbsp;&amp;nbsp;&lt;b&gt;끊김 0회&lt;/b&gt;&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#C7131F;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="70" y="926" width="760" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="n170" value="PRIMARY 가 &lt;b&gt;reverdi-db-1 → reverdi-db-2&lt;/b&gt; 로 자동 승격.&lt;br&gt;웹 파드는 &lt;b&gt;재시작조차 하지 않았다&lt;/b&gt; (RESTARTS 0).&lt;br&gt;&lt;span style=&#x27;color:#5E7F0F&#x27;&gt;읽기는 replica 로 가므로 조회가 끊기지 않는다 — &lt;b&gt;AWS RDS Multi-AZ 와 같은 동작&lt;/b&gt;&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#5E7F0F;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="850" y="926" width="780" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="n171" value="⚠️ 아직 안 된 것" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8F8F8;strokeColor=#879196;align=left;verticalAlign=top;spacingLeft=16;spacingTop=10;fontSize=13;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1030" width="1620" height="96" as="geometry" />
+        </mxCell>
+        <mxCell id="n172" value="&lt;b&gt;Jenkins update gitops&lt;/b&gt; — when { branch &#x27;main&#x27; } 조건으로 건너뜀" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#B45309;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="70" y="1076" width="500" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="n173" value="&lt;b&gt;node-exporter node0 누락&lt;/b&gt; — toleration 에 effect 명시 때문" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#B45309;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="590" y="1076" width="500" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="n174" value="&lt;b&gt;MinIO · pgdump · aggregate&lt;/b&gt; — 진입점 미구현" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#B45309;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="1110" y="1076" width="530" height="38" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name="3. CI/CD 흐름" id="fin-3">
+    <mxGraphModel dx="2361" dy="1061" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="940" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="n175" value="구축 테스트 정리 — ③ CI/CD 흐름 (동작 확인 완료)&lt;br&gt;&lt;span style=&#x27;font-size:12px;color:#5A5A5A&#x27;&gt;Jenkins 는 빌드만, Argo CD 가 배포 — Jenkins 가 클러스터를 만지지 않는다&lt;/span&gt;" style="text;html=1;align=left;verticalAlign=middle;fontSize=20;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="40" y="24" width="1620" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n176" value="① 빌드 — Jenkins" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0F5FF;strokeColor=#1D4ED8;align=left;verticalAlign=top;spacingLeft=16;spacingTop=10;fontSize=13;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="40" y="100" width="1620" height="230" as="geometry" />
+        </mxCell>
+        <mxCell id="n177" value="&lt;b&gt;개발자&lt;/b&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px&#x27;&gt;코드 push&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#879196;fontSize=11;align=center;verticalAlign=middle;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="80" y="160" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="n178" value="&lt;b&gt;CloudeDX&lt;/b&gt; (git)&lt;br&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px&#x27;&gt;app/ · dockerfile.*&lt;br&gt;&lt;b&gt;Jenkinsfile&lt;/b&gt;&lt;br&gt;&lt;br&gt;개발자만 커밋&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1D4ED8;fontSize=11;align=center;verticalAlign=middle;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="310" y="150" width="250" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="n179" value="&lt;b&gt;Jenkins 파이프라인&lt;/b&gt; &amp;nbsp;&lt;span style=&#x27;color:#5E7F0F&#x27;&gt;✅ SUCCESS&lt;/span&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;① lint&lt;/b&gt; ruff &amp;nbsp;→&amp;nbsp; &lt;b&gt;② test&lt;/b&gt; 사이드카 Postgres + alembic + pytest &amp;nbsp;→&amp;nbsp; &lt;b&gt;③ build&lt;/b&gt; Buildah ×2 &amp;nbsp;→&amp;nbsp; &lt;b&gt;④ chart lint&lt;/b&gt; helm template &amp;nbsp;→&amp;nbsp; &lt;b&gt;⑤ gitops 커밋&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&#x27;color:#C7131F&#x27;&gt;🔴 파드 정의를 Jenkinsfile 안에 둔다(인라인) — Helm values 의 podTemplates 에 의존하지 않아 Jenkins 를 다시 깔아도 동작한다&lt;/span&gt;&lt;br&gt;&lt;span style=&#x27;color:#5A5A5A&#x27;&gt;컨테이너 5개: python · postgres · buildah · tools · jnlp &amp;nbsp;|&amp;nbsp; node4 에서 실행 (taint toleration)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1D4ED8;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="590" y="150" width="1040" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="n180" value="② 아티팩트 — 이미지와 설정을 나눠 보관" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFCF5;strokeColor=#D05C17;align=left;verticalAlign=top;spacingLeft=16;spacingTop=10;fontSize=13;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="40" y="360" width="1620" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="n181" value="&lt;b&gt;이미지 저장소&lt;/b&gt; &amp;nbsp;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;— &quot;무엇을 실행할지&quot;&lt;/span&gt;&lt;br&gt;&lt;br&gt;로컬 &amp;nbsp; Docker Registry (registry:2, node5)&lt;br&gt;AWS &amp;nbsp;&amp;nbsp; ECR &amp;nbsp;&lt;span style=&#x27;font-size:10px&#x27;&gt;같은 리전 pull 무료&lt;/span&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px&#x27;&gt;reverdi-backend 564MB · reverdi-crawler 2.7GB&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#D05C17;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="80" y="410" width="740" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="n182" value="&lt;b&gt;reverdi&lt;/b&gt; (git) &amp;nbsp;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;— &quot;어떻게 실행할지&quot;&lt;/span&gt;&lt;br&gt;&lt;br&gt;charts/reverdi/ &amp;nbsp;&lt;span style=&#x27;font-size:10px&#x27;&gt;templates · values-vagrant · values-aws&lt;/span&gt;&lt;br&gt;infra/ &amp;nbsp; argocd/ &amp;nbsp; helm-values/&lt;br&gt;&lt;br&gt;&lt;span style=&#x27;color:#C7131F&#x27;&gt;🔴 저장소를 둘로 나눈 이유 — 같은 곳에 두면 Jenkins 가 커밋 → 그 커밋이 Jenkins 를 다시 깨움 → &lt;b&gt;무한 루프&lt;/b&gt;&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8C4FFF;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="850" y="410" width="780" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="n183" value="③ 배포 — Argo CD (풀 방식)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F0FF;strokeColor=#8C4FFF;align=left;verticalAlign=top;spacingLeft=16;spacingTop=10;fontSize=13;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="40" y="580" width="1620" height="210" as="geometry" />
+        </mxCell>
+        <mxCell id="n184" value="&lt;b&gt;Argo CD&lt;/b&gt; &amp;nbsp;&lt;span style=&#x27;color:#5E7F0F&#x27;&gt;✅ Synced / Healthy&lt;/span&gt;&lt;br&gt;&lt;br&gt;git ↔ 클러스터 상태를 지속 비교&lt;br&gt;&lt;br&gt;&lt;b&gt;prune: true&lt;/b&gt; &amp;nbsp;git 에서 지운 리소스는 클러스터에서도 삭제&lt;br&gt;&lt;b&gt;selfHeal: true&lt;/b&gt; &amp;nbsp;kubectl 로 손대면 &lt;b&gt;git 상태로 되돌림&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style=&#x27;color:#C7131F&#x27;&gt;Helm 을 helm template 으로만 쓴다 → helm rollback 불가&lt;/span&gt; &amp;nbsp;&lt;span style=&#x27;color:#5E7F0F&#x27;&gt;&lt;b&gt;롤백 = git revert&lt;/b&gt;&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#8C4FFF;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="80" y="630" width="700" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="n185" value="&lt;b&gt;클러스터&lt;/b&gt;&lt;br&gt;&lt;br&gt;웹 파드 3개 (node1·2·3)&lt;br&gt;DB 3대 (primary + replica 2)&lt;br&gt;크롤러 CronJob (node4)&lt;br&gt;&lt;br&gt;&lt;span style=&#x27;font-size:10px;color:#5A5A5A&#x27;&gt;파드가 레지스트리에서 이미지 pull&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#7AA116;fontSize=11;align=center;verticalAlign=middle;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="810" y="630" width="400" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="n186" value="&lt;b&gt;이렇게 나눈 이점&lt;/b&gt;&lt;br&gt;&lt;br&gt;· Jenkins 에 &lt;b&gt;클러스터 권한이 필요 없다&lt;/b&gt;&lt;br&gt;&amp;nbsp;&amp;nbsp;kubeconfig · EKS IAM 불필요&lt;br&gt;· git 커밋 = 배포 이력&lt;br&gt;· 지금 뭐가 떠 있는지 &lt;b&gt;git 이 증명&lt;/b&gt;&lt;br&gt;· 손으로 바꿔도 되돌아온다" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#5E7F0F;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="630" width="390" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="n187" value="push" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#5A5A5A;strokeWidth=2;endArrow=block;fontSize=10;fontColor=#5A5A5A;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="n177" target="n178">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n188" value="트리거" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#1D4ED8;strokeWidth=2;endArrow=block;fontSize=10;fontColor=#1D4ED8;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="n178" target="n179">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n189" value="이미지 push" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#B45309;strokeWidth=3;endArrow=block;fontSize=10;fontColor=#B45309;exitX=0.2;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="n179" target="n181">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n190" value="image.tag 커밋" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#8C4FFF;strokeWidth=3;endArrow=block;fontSize=10;fontColor=#8C4FFF;exitX=0.7;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="n179" target="n182">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n191" value="git 변경 감지 (풀)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#8C4FFF;strokeWidth=3;endArrow=block;fontSize=10;fontColor=#8C4FFF;exitX=0.2;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="n182" target="n184">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n192" value="동기화" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#8C4FFF;strokeWidth=3;endArrow=block;fontSize=10;fontColor=#8C4FFF;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="n184" target="n185">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n193" value="이미지 pull" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#B45309;strokeWidth=2;endArrow=block;fontSize=10;fontColor=#B45309;dashed=1;exitX=0.9;exitY=1;exitDx=0;exitDy=0;entryX=0.2;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="n181" target="n185">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="n194" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFCF5;strokeColor=#B45309;" vertex="1" parent="1">
+          <mxGeometry x="40" y="820" width="1620" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="n195" value="&lt;b&gt;⚠️ 아직 미완성&lt;/b&gt; &amp;nbsp; &lt;b&gt;update gitops&lt;/b&gt; 단계가 건너뛰어졌다 — &lt;span style=&#x27;font-family:monospace;font-size:10px&#x27;&gt;Stage &quot;update gitops&quot; skipped due to when conditional&lt;/span&gt;&lt;br&gt;&lt;span style=&#x27;color:#5A5A5A&#x27;&gt;Pipeline script from SCM 으로 단일 브랜치를 받으면 env.BRANCH_NAME 이 채워지지 않는다. Multibranch Pipeline 으로 만들거나 조건을 완화하면 해결된다.&lt;br&gt;빌드 → 이미지 push 까지는 검증됐으므로 &lt;b&gt;남은 건 마지막 연결 고리 하나&lt;/b&gt;다.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#B45309;fontSize=11;align=left;verticalAlign=top;spacingLeft=14;spacingTop=10;fontColor=#232F3E;" vertex="1" parent="1">
+          <mxGeometry x="64" y="832" width="1570" height="66" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
