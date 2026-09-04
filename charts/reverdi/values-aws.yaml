@@ -103,6 +103,21 @@ config:
   AWS_REGION: "ap-northeast-2"
   # CloudFront 를 붙이면 그 도메인. 비우면 버킷 주소로 만든다.
   S3_PUBLIC_BASE: ""
+  # 🔴 ALB 가 X-Forwarded-For 를 붙인다. 켜지 않으면 모든 사용자가
+  #    ALB 의 IP 하나로 묶여, 첫 사용자가 상한을 채우면 전원이 막힌다.
+  #
+  #    ⚠️ ALB 기본 동작은 클라이언트가 보낸 XFF 뒤에 실제 IP 를 append 하는 것이다.
+  #       앱이 "첫 값"을 쓰므로 클라이언트가 조작할 수 있다.
+  #       ALB 속성 routing.http.xff_header_processing.mode = replace 로
+  #       ALB 가 헤더를 덮어쓰게 해야 한다. (C 담당 / Terraform · Ingress 어노테이션)
+  TRUST_PROXY_HEADERS: "true"
+
+  # 🔴 최소 require. VPC 안이라도 DB 연결을 평문으로 두지 않는다.
+  #    verify-full 로 올리려면 RDS 루트 CA 번들을 마운트해야 한다:
+  #      curl -o rds-ca.pem https://truststore.pki.rds.amazonaws.com/ap-northeast-2/ap-northeast-2-bundle.pem
+  #      kubectl create configmap rds-ca -n reverdi --from-file=rds-ca.pem
+  #    그다음 DATABASE_SSL_ROOT_CERT 에 마운트 경로를 준다.
+  DATABASE_SSL_MODE: "require"
 
 # 🔴 External Secrets Operator 가 Secrets Manager 에서 만든다. 차트는 참조만.
 secret:

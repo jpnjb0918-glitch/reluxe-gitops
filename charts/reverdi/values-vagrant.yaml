@@ -77,6 +77,13 @@ config:
   # 로컬엔 S3 가 없으므로 디스크 저장을 허용한다
   ALLOW_LOCAL_STORAGE: "true"
   S3_BUCKET: ""
+  # 🔴 NodePort 로 직접 들어온다 — 앞에 프록시가 없다.
+  #    켜면 누구나 X-Forwarded-For 에 아무 IP 나 적어 속도 제한을 피할 수 있다.
+  TRUST_PROXY_HEADERS: "false"
+
+  # CloudNativePG 가 TLS 인증서를 자동 생성하지만,
+  # 로컬에서 인증서 검증까지 할 이유는 없다.
+  DATABASE_SSL_MODE: "prefer"
 
 # 🔴 Secret 은 미리 만들어 둔다 (README 참조). 차트는 참조만 한다.
 secret:
