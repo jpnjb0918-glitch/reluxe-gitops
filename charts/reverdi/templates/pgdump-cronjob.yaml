@@ -61,7 +61,7 @@ spec:
                   #   AWS      aws s3 cp "$FILE" s3://<버킷>/backup/
                   echo "업로드 미구현. 이 파드가 끝나면 파일은 사라진다."
               envFrom:
-                {{- include "reverdi.envFrom" . | nindent 16 }}
+                {{- include "reverdi.envFromBatch" . | nindent 16 }}
               volumeMounts:
                 - name: work
                   mountPath: {{ .Values.pgdump.workDir }}

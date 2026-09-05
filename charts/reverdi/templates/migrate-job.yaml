@@ -58,8 +58,16 @@ spec:
               업그레이드 → ConfigMap 있음 → 반영
           */}}
           envFrom:
+            {{/*
+              🔴 마이그레이션도 배치다 — alembic 은 app/auth.py 를 임포트하지 않아
+                 관리자 비밀번호가 필요 없다. DATABASE_URL 만 있으면 된다.
+            */}}
             - secretRef:
+{{- if .Values.secretScope.perWorkload }}
+                name: {{ .Values.secretScope.dbSecretName }}
+{{- else }}
                 name: {{ include "reverdi.secretName" . }}
+{{- end }}
             - configMapRef:
                 name: {{ include "reverdi.configMapName" . }}
                 optional: true

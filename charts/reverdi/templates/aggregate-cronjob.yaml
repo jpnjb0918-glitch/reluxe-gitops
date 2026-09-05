@@ -51,7 +51,7 @@ spec:
               command:
                 {{- toYaml .Values.aggregate.command | nindent 16 }}
               envFrom:
-                {{- include "reverdi.envFrom" . | nindent 16 }}
+                {{- include "reverdi.envFromBatch" . | nindent 16 }}
               resources:
                 {{- toYaml .Values.aggregate.resources | nindent 16 }}
               securityContext:

@@ -60,7 +60,7 @@ spec:
               command:
                 {{- toYaml .Values.crawler.command | nindent 16 }}
               envFrom:
-                {{- include "reverdi.envFrom" . | nindent 16 }}
+                {{- include "reverdi.envFromBatch" . | nindent 16 }}
               volumeMounts:
                 - name: dshm
                   mountPath: /dev/shm

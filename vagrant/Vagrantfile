@@ -79,6 +79,22 @@ Vagrant.configure("2") do |config|
       node.vm.provision "file", source: "scripts", destination: "/tmp/scripts"
 
       # -----------------------------------------------------------------
+      # 🔴 CRLF 제거 — Windows 에서 만든 스크립트는 줄 끝에 \r 이 붙는다.
+      #
+      #    리눅스 셸이 그걸 명령의 일부로 읽어
+      #      set: pipefail\r: invalid option name
+      #      /bin/bash^M: bad interpreter
+      #    같은 오류가 난다. (문제 3)
+      #
+      #    🔴 순서가 중요하다 — file 로 복사한 "직후", 실행하기 "전에" 해야 한다.
+      #       뒤로 가면 이미 00-common.sh 가 깨진 뒤다.
+      #
+      #    macOS/리눅스 호스트에서는 애초에 \r 이 없어 아무 일도 하지 않는다.
+      # -----------------------------------------------------------------
+      node.vm.provision "fix-line-endings", type: "shell",
+        inline: "find /tmp/scripts -type f -name '*.sh' -exec sed -i 's/\\r$//' {} \\;"
+
+      # -----------------------------------------------------------------
       # [1] 전 노드 공통 — k3s 설치 "전에" 끝나야 한다
       # -----------------------------------------------------------------
       node.vm.provision "common", type: "shell",

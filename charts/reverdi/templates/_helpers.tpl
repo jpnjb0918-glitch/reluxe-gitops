@@ -118,9 +118,53 @@ envFrom 을 쓰면 ConfigMap/Secret 의 키가 그대로 환경변수 이름이 
   LOG_LEVEL 키 → LOG_LEVEL 환경변수
 app/config.py 가 os.getenv("LOG_LEVEL") 로 읽으므로 그대로 맞아떨어진다.
 */}}
+{{/*
+===========================================================================
+envFrom — 워크로드별로 받는 Secret 이 다르다
+
+🔴 왜 나누나 (백엔드 보안 점검 4번 · docs/security.md)
+
+  전에는 크롤러·집계·백업도 웹과 같은 Secret 을 통째로 받았다.
+  그러면 크롤러 하나가 뚫렸을 때 관리자 비밀번호까지 같이 넘어간다.
+
+  백엔드가 앱 쪽을 먼저 고쳤다.
+    · config.py 는 비밀값이 비어도 기록만 하고 통과한다
+    · 거부는 그 값을 실제로 쓰는 app/auth.py 임포트 시점에
+      require_secrets("ADMIN_PASSWORD","CLIENT_PASSWORD","SESSION_SECRET")
+    · 웹만 auth.py 를 임포트하므로 크롤러는 DATABASE_URL 만으로 뜬다
+
+  실제로 확인했다 — 크롤러도 alembic 도 app/auth.py 를 임포트하지 않는다.
+
+  그래서 Secret 을 두 개로 나눠 준다.
+    reverdi-secret      웹 전용 — 계정 · SESSION_SECRET · DB
+    reverdi-db-secret   배치용 — DB 접속만
+
+⚠️ secretScope.perWorkload 를 켜기 전에
+   백엔드 4번 패치가 들어간 이미지여야 한다.
+   이전 이미지는 config.py 가 임포트 시점에 관리자 비밀번호를 요구해
+   크롤러가 뜨지 않는다.
+===========================================================================
+*/}}
+
+{{/* 웹 — 전체 Secret */}}
 {{- define "reverdi.envFrom" -}}
 - configMapRef:
     name: {{ include "reverdi.configMapName" . }}
 - secretRef:
     name: {{ include "reverdi.secretName" . }}
+{{- end }}
+
+{{/*
+배치(크롤러·집계·백업) — DB 접속만.
+perWorkload 가 꺼져 있으면 웹과 같은 Secret 을 쓴다(기존 동작).
+*/}}
+{{- define "reverdi.envFromBatch" -}}
+- configMapRef:
+    name: {{ include "reverdi.configMapName" . }}
+- secretRef:
+{{- if .Values.secretScope.perWorkload }}
+    name: {{ .Values.secretScope.dbSecretName }}
+{{- else }}
+    name: {{ include "reverdi.secretName" . }}
+{{- end }}
 {{- end }}
